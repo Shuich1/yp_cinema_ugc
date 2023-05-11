@@ -1,0 +1,258 @@
+version: '3.9'
+services:
+
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    env_file:
+      - .env
+    expose:
+      - "5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./db_init.sql:/docker-entrypoint-initdb.d/db_init.sql
+      - ./database:/var/lib/postgresql/data
+
+  postgres_auth:
+    image: postgres:13
+    container_name: postgres_auth
+    environment:
+      - POSTGRES_HOST=${AUTH_POSTGRES_HOST}
+      - POSTGRES_PORT=${AUTH_POSTGRES_PORT}
+      - POSTGRES_USER=${AUTH_POSTGRES_USER}
+      - POSTGRES_DB=${AUTH_POSTGRES_DB}
+      - POSTGRES_PASSWORD=${AUTH_POSTGRES_PASSWORD}
+    expose:
+      - "5433"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${AUTH_POSTGRES_USER} -d ${AUTH_POSTGRES_DB} -p ${AUTH_POSTGRES_PORT}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./auth_database:/var/lib/postgresql/data
+    command: -p 5433
+
+  django:
+    container_name: django
+    build: ./app
+    env_file:
+      - .env
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --silent ${ALLOWED_HOSTS}:${DJANGO_PORT} >/dev/null || exit 1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "8000"
+    volumes:
+      - ./app/static:/opt/app/static:rw
+
+  nginx:
+    container_name: nginx
+    image: nginx:1.23.2
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/config:/etc/nginx/conf.d:ro
+      - ./app/static:/data/static:ro
+    depends_on:
+      django:
+        condition: service_healthy
+      fastapi:
+        condition: service_healthy
+      flask_auth:
+        condition: service_healthy
+    ports:
+      - "80:80"
+
+  elastic:
+    container_name: elastic
+    image: elasticsearch:7.17.8
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms2048m -Xmx2048m
+    #    volumes:
+    #      - ./elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --silent ${ES_URL}  >/dev/null || exit 1" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    expose:
+      - "9200"
+
+  etl:
+    container_name: etl
+    build: ./postgres_to_es
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elastic:
+        condition: service_healthy
+
+  sqlite_to_pg:
+    container_name: sqlite_to_pg
+    build: ./sqlite_to_postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+      django:
+        condition: service_healthy
+    volumes:
+      - ./.env:/opt/sqlite_to_postgres/.env:ro
+
+  redis:
+    image: redis:7.0.8
+    expose:
+      - "6379"
+
+  redis_auth:
+    image: redis:7.0.8
+    expose:
+     - "6380"
+    command: --port 6380
+
+  fastapi:
+    container_name: fastapi
+    build: ./fastapi-solution
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --silent ${FASTAPI_HOST}:${FASTAPI_PORT} -H 'X-Request-Id: healthcheck' >/dev/null || exit 1" ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elastic:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    expose:
+      - "80"
+    volumes:
+      - ./schema/user.json:/opt/fastapi/user.json:ro
+    
+  flask_auth:
+    container_name: flask_auth
+    build: ./auth-solution
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --silent ${FLASK_HOST}:${FLASK_PORT}/healthcheck -H 'X-Request-Id: healthcheck' >/dev/null || exit 1" ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    env_file:
+      - .env
+    depends_on:
+      postgres_auth:
+        condition: service_healthy
+      redis_auth:
+        condition: service_started
+    expose:
+      - "5000"
+    volumes:
+      - ./auth-solution/migrations:/opt/app/migrations
+
+  jaeger:
+    container_name: jaeger
+    image: jaegertracing/all-in-one:1.42
+    environment:
+      - QUERY_BASE_PATH=/jaeger
+      - SPAN_STORAGE_TYPE=badger
+      - BADGER_EPHEMERAL=false
+      - BADGER_DIRECTORY_VALUE=/badger/data
+      - BADGER_DIRECTORY_KEY=/badger/key
+    volumes:
+      - jaeger_data:/badger
+    expose:
+      - "16686"
+      - "6831/udp"
+  
+  # Confluent platform
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.3
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    restart: always
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.3
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    restart: always
+
+  clickhouse-node1:
+    image: yandex/clickhouse-server:20.4
+    container_name: clickhouse-node1
+    hostname: clickhouse-node1
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - ./ch_config/node1:/etc/clickhouse-server
+    depends_on:
+      - zookeeper
+
+  clickhouse-node2:
+    image: yandex/clickhouse-server:20.4
+    container_name: clickhouse-node2
+    hostname: clickhouse-node2
+    volumes:
+      - ./ch_config/node2:/etc/clickhouse-server
+    depends_on:
+      - zookeeper
+
+  clickhouse-node3:
+    image: yandex/clickhouse-server:20.4
+    container_name: clickhouse-node3
+    hostname: clickhouse-node3
+    volumes:
+      - ./ch_config/node3:/etc/clickhouse-server
+    depends_on:
+      - zookeeper
+
+  clickhouse-node4:
+    image: yandex/clickhouse-server:20.4
+    container_name: clickhouse-node4
+    hostname: clickhouse-node4
+    volumes:
+      - ./ch_config/node4:/etc/clickhouse-server
+    depends_on:
+      - zookeeper
+
+
+volumes:
+  database:
+  auth_database:
+  static_volume:
+  elasticsearch-data:
+    driver: local
+  jaeger_data:
+  migrations:
+  ch_config:
