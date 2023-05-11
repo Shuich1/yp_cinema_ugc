@@ -25,11 +25,11 @@ node AdminService {
         file Transform
         file Load
 
-        CurrentState -> Extract: проверка текущего состояния
+        CurrentState -up-> Extract: проверка текущего состояния
         Load -> CurrentState: обновление состояния
         
-        Extract -> Transform
-        Transform -> Load
+        Extract -left-> Transform
+        Transform -left-> Load
     }
 }
 
@@ -68,9 +68,9 @@ node AuthService {
 
 node UGCService {
     card Zookeeper
+    file UGCAPI
 
     frame OLTP {
-        file UGCAPI
         database Kafka
     }
     
@@ -98,14 +98,14 @@ node UGCService {
 
 NGINX <-up-> Client: запросы [пользователь]
 NGINX <-up-> SuperUser: запросы [модераторы, админ]
-NGINX <-> DjangoAdminPanel: доступ к админ панели
+NGINX <--> DjangoAdminPanel: доступ к админ панели
 NGINX <.[#Purple].> DjangoAPI: legacy movies API
 NGINX <-> AsyncAPI: API полнотекстового поиска
-NGINX <-> AuthAPI: API авторизации
+NGINX <--> AuthAPI: API авторизации
 NGINX <..> Jaeger: доступ к Jaeger
 NGINX <-down-> UGCAPI: API контента, сгенерированного поиска
 
-PostgresMovies -> Extract: выгрузка данных из Postgres
+PostgresMovies -up-> Extract: выгрузка данных из Postgres
 PostgresMovies <.[#Purple].> DjangoAPI: legacy movies api
 PostgresMovies <--> DjangoAdminPanel
 
