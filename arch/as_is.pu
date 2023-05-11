@@ -74,14 +74,11 @@ NGINX <--> AsyncAPI: API полнотекстового поиска
 NGINX <--> AuthAPI: API авторизации
 NGINX <..> Jaeger: доступ к Jaeger
 
-'Postgres connections
 PostgresMovies -> Extract: выгрузка данных из Postgres
 PostgresMovies <.[#Purple].> DjangoAPI: legacy movies api
 PostgresMovies <--> DjangoAdminPanel
 
-' Elastic connections
 Load -> ElasticsearchMovies: загрузка данных в ElasticSearch
 ElasticsearchMovies <--> Async_Services: взятие данных из elastic
 
-' SuperUser connections
 SuperUser <.> Jaeger: запросы [аналитики, админ]

@@ -1,14 +1,13 @@
-@startuml as_is
+@startuml to_be
 !theme materia
 skinparam componentStyle uml2
 
-title AS_IS
+title TO_BE
 
 agent Client
 agent SuperUser
 card NGINX
 card Jaeger
-database PostgresMovies
 database ElasticsearchMovies
 
 
@@ -17,6 +16,8 @@ node AdminService {
         component DjangoAPI
         component DjangoAdminPanel
     }
+
+    database PostgresMovies
 
     frame PostgresToElasticETL {
         database CurrentState
@@ -65,24 +66,53 @@ node AuthService {
     AuthTracer -> Jaeger: отправление трейсов Jaeger
 }
 
-' NGINX connections
-NGINX <--> Client: запросы [пользователь]
-NGINX <--> SuperUser: запросы [модераторы, админ]
-NGINX <--> DjangoAdminPanel: доступ к админ панели
-NGINX <.[#Purple].> DjangoAPI: legacy movies API
-NGINX <--> AsyncAPI: API полнотекстового поиска
-NGINX <--> AuthAPI: API авторизации
-NGINX <..> Jaeger: доступ к Jaeger
+node UGCService {
+    card Zookeeper
 
-'Postgres connections
+    frame OLTP {
+        file UGCAPI
+        database Kafka
+    }
+    
+    UGCAPI --> Kafka
+
+    frame UGC_ETL{
+        file UGC_Extract
+        file UGC_Transform
+        file UGC_Load
+    }
+
+    frame OLAP {
+        database ClickHouse
+    }
+
+    Zookeeper <-up-> Kafka
+    Zookeeper <-up-> ClickHouse
+
+    Kafka -up-> UGC_Extract: данные о событии
+    UGC_Extract -left-> UGC_Transform
+    UGC_Transform -left-> UGC_Load
+    UGC_Load --> ClickHouse: данные о событии
+
+}
+
+NGINX <-up-> Client: запросы [пользователь]
+NGINX <-up-> SuperUser: запросы [модераторы, админ]
+NGINX <-> DjangoAdminPanel: доступ к админ панели
+NGINX <.[#Purple].> DjangoAPI: legacy movies API
+NGINX <-> AsyncAPI: API полнотекстового поиска
+NGINX <-> AuthAPI: API авторизации
+NGINX <..> Jaeger: доступ к Jaeger
+NGINX <-down-> UGCAPI: API контента, сгенерированного поиска
+
 PostgresMovies -> Extract: выгрузка данных из Postgres
 PostgresMovies <.[#Purple].> DjangoAPI: legacy movies api
 PostgresMovies <--> DjangoAdminPanel
 
-' Elastic connections
 Load -> ElasticsearchMovies: загрузка данных в ElasticSearch
 ElasticsearchMovies <--> Async_Services: взятие данных из elastic
 ElasticsearchMovies <.[#Purple].> DjangoAPI: legacy movies api
 
-' SuperUser connections
 SuperUser <.> Jaeger: запросы [аналитики, админ]
+
+@enduml
