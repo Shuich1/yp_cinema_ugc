@@ -7,7 +7,7 @@ from api.v1 import users_films
 
 from core.config import settings
 from core.logger import LOGGING
-from db import olap, oltp
+# from db import olap, oltp
 
 
 app = FastAPI(
@@ -22,9 +22,10 @@ app = FastAPI(
 @app.on_event('startup')
 async def startup():
     # TODO
-    # olap.olap_bd = 
-    # oltp.oltp_bd = 
+    # olap.olap_bd =
+    # oltp.oltp_bd =
     pass
+
 
 @app.on_event('shutdown')
 async def shutdown():

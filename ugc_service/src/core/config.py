@@ -18,7 +18,6 @@ class Settings(BaseSettings):
     UVICORN_HOST: str = Field(..., env='UVICORN_HOST')
     UVICORN_PORT: int = Field(..., env='UVICORN_PORT')
 
-
     class Config:
         env_file = ENV_FILE_PATH
 

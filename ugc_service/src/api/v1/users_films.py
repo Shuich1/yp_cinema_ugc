@@ -10,6 +10,7 @@ from services.users_films import UserFilmService, get_userfilm_service
 class BaseResponse(BaseModel):
     detail: str
 
+
 class HTTPError(BaseModel):
     detail: str
 
@@ -47,4 +48,3 @@ async def create_user_film_timestamp(
         return HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=exception.__str__())
 
     return BaseResponse(detail='ok')
-

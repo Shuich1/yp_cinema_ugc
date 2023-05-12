@@ -12,5 +12,6 @@ class GenericOlap(ABC):
 
 olap_bd: Optional[GenericOlap] = None
 
+
 async def get_olap() -> GenericOlap:
     return olap_bd
