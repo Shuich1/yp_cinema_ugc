@@ -15,7 +15,7 @@ services:
       retries: 5
     volumes:
       - ./db_init.sql:/docker-entrypoint-initdb.d/db_init.sql
-      - ./database:/var/lib/postgresql/data
+      - database:/var/lib/postgresql/data
 
   postgres_auth:
     image: postgres:13
@@ -34,7 +34,7 @@ services:
       timeout: 5s
       retries: 5
     volumes:
-      - ./auth_database:/var/lib/postgresql/data
+      - auth_database:/var/lib/postgresql/data
     command: -p 5433
 
   django:
