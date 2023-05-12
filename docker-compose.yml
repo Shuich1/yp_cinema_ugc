@@ -142,6 +142,18 @@ services:
       - "80"
     volumes:
       - ./schema/user.json:/opt/fastapi/user.json:ro
+
+  ugc:
+    container_name: ugc
+    build:
+      context: ./ugc_service
+      dockerfile: Dockerfile
+    volumes:
+      - ./ugc_service:/ugc_service
+    env_file:
+      - environments/ugc_service
+    ports:
+      - 18000:8000
     
   flask_auth:
     container_name: flask_auth
