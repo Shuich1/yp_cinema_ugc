@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS shard.view(
     end_time UInt16,
     event_time DateTime DEFAULT now()
 )
-Engine=ReplicatedMergeTree('/clickhouse/tables/shard2/view', 'replica_1') PARTITION BY toYYYYMMDD(event_time) ORDER BY event_time;
+Engine=ReplicatedMergeTree('/clickhouse/tables/shard2/view', 'replica_1') PARTITION BY toYYYYMMDD(event_time) ORDER BY film_id;
 
 CREATE TABLE IF NOT EXISTS replica.view(
     user_id String,
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS replica.view(
     end_time UInt16,
     event_time DateTime DEFAULT now()
 )
-Engine=ReplicatedMergeTree('/clickhouse/tables/shard1/view', 'replica_2') PARTITION BY toYYYYMMDD(event_time) ORDER BY event_time;
+Engine=ReplicatedMergeTree('/clickhouse/tables/shard1/view', 'replica_2') PARTITION BY toYYYYMMDD(event_time) ORDER BY film_id;
 
 CREATE TABLE IF NOT EXISTS default.view(
     user_id String,
