@@ -1,11 +1,10 @@
 import string
 from datetime import datetime
 from secrets import choice as secrets_choice
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 from flask import Request
-from flask_jwt_extended import (create_access_token,
-                                create_refresh_token)
+from flask_jwt_extended import create_access_token, create_refresh_token
 from flask_migrate import Migrate
 from flask_security import Security, SQLAlchemyUserDatastore
 from user_agents import parse

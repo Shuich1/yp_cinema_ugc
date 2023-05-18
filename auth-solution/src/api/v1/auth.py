@@ -11,8 +11,7 @@ from ...services.oauth import OAuthSignIn
 from ...services.redis import jwt_redis_blocklist, jwt_redis_refresh_tokens
 from ...utils.captcha import require_recaptcha
 from ...utils.extensions import (add_auth_history, create_tokens,
-                                 generate_random_string,
-                                 user_datastore)
+                                 generate_random_string, user_datastore)
 from ...utils.rate_limit import rate_limit
 
 ACCESS_EXPIRES = timedelta(hours=1)

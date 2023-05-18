@@ -4,6 +4,7 @@ from http import HTTPStatus
 import redis
 from flask import jsonify, request
 from opentelemetry import trace
+
 from ..core.config import settings
 from ..services.redis import redis_rate_limit
 

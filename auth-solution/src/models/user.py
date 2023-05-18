@@ -3,8 +3,9 @@ import uuid
 
 from flask_security import UserMixin
 from sqlalchemy import UniqueConstraint
-from ..services.database import db
+
 from ..core.config import db_config
+from ..services.database import db
 from .user_roles import roles_users
 
 
