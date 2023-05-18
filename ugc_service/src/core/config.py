@@ -1,8 +1,8 @@
 import os
 from logging import config as logging_config
+
 from core.logger import LOGGING
 from pydantic import BaseSettings, Field
-
 
 # Корень проекта
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     UVICORN_APP_NAME: str = Field(..., env='UVICORN_APP_NAME')
     UVICORN_HOST: str = Field(..., env='UVICORN_HOST')
     UVICORN_PORT: int = Field(..., env='UVICORN_PORT')
+
+    KAFKA_HOST: str = Field(..., env='KAFKA_HOST')
+    KAFKA_PORT: int = Field(..., env='KAFKA_PORT')
+    KAFKA_TOPIC: str = Field(..., env='KAFKA_TOPIC')
 
     class Config:
         env_file = ENV_FILE_PATH
