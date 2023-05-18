@@ -17,7 +17,7 @@ class UserFilmService:
         return await self.oltp.write(
             key=f'{user_film_data.user_id}+{user_film_data.film_id}',
             data=user_film_data.json(),
-            topic=settings.KAFKA_TOPIC
+            topic=settings.KAFKA_VIEW_TOPIC
         )
 
 

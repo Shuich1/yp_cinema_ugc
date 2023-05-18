@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     KAFKA_HOST: str = Field(..., env='KAFKA_HOST')
     KAFKA_PORT: int = Field(..., env='KAFKA_PORT')
-    KAFKA_TOPIC: str = Field(..., env='KAFKA_TOPIC')
+    KAFKA_VIEW_TOPIC: str = Field(..., env='KAFKA_VIEW_TOPIC')
 
     class Config:
         env_file = ENV_FILE_PATH
