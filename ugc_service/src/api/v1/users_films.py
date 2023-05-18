@@ -1,9 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
 from datetime import datetime
-from uuid import UUID
 from http import HTTPStatus
+from uuid import UUID
 
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from services.users_films import UserFilmService, get_userfilm_service
 
 
@@ -35,15 +35,15 @@ router = APIRouter()
              summary='Создание временной метки о просмотренной пользователем части кинопроизведения',
              description='Создание временной метки о просмотренной пользователем части кинопроизведения',
              responses={
-                 HTTPStatus.OK: {'model': BaseResponse, 'description': 'Результат операции'},
-                 HTTPStatus.BAD_REQUEST: {'model': HTTPError}
+                HTTPStatus.OK: {'model': BaseResponse, 'description': 'Результат операции'},
+                HTTPStatus.BAD_REQUEST: {'model': HTTPError}
              })
 async def create_user_film_timestamp(
         user_film_data: UserFilmTimestampSchema,
         ugc_service: UserFilmService = Depends(get_userfilm_service),
 ):
     try:
-        await ugc_service.create_user_film_timestamp(**user_film_data.dict())
+        await ugc_service.create_user_film_timestamp(user_film_data)
     except BaseException as exception:
         return HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=exception.__str__())
 

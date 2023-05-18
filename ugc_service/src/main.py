@@ -1,14 +1,12 @@
 import logging
 
 import uvicorn
-from fastapi import FastAPI
-from fastapi.responses import ORJSONResponse
 from api.v1 import users_films
-
 from core.config import settings
 from core.logger import LOGGING
-# from db import olap, oltp
-
+from db import olap, oltp
+from fastapi import FastAPI
+from fastapi.responses import ORJSONResponse
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -23,18 +21,22 @@ app = FastAPI(
 async def startup():
     # TODO
     # olap.olap_bd =
-    # oltp.oltp_bd =
-    pass
+    oltp.oltp_bd = oltp.KafkaOltp(
+        f'{settings.KAFKA_HOST}:{settings.KAFKA_PORT}'
+    )
+    await oltp.oltp_bd.connect()
 
 
 @app.on_event('shutdown')
 async def shutdown():
-    # TODO
     # await olap.olap_bd.disconnect()
-    # await oltp.oltp_bd.disconnect()
-    pass
+    await oltp.oltp_bd.disconnect()
 
-app.include_router(users_films.router, prefix='/api/v1/users_films', tags=['users_films'])
+app.include_router(
+    users_films.router,
+    prefix='/api/v1/users_films',
+    tags=['users_films']
+)
 
 
 if __name__ == '__main__':
