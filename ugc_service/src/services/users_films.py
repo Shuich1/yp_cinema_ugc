@@ -1,4 +1,3 @@
-import json
 from functools import lru_cache
 
 from core.config import settings
