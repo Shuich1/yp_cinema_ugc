@@ -1,0 +1,5 @@
+orjson==3.8.12
+pydantic==1.10.7
+kafka-python==2.0.2
+clickhouse-driver==0.2.6
+backoff==2.2.1
