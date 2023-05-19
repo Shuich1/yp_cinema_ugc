@@ -3,7 +3,7 @@ FROM python:3.10
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-ENV APP_HOME=/ugc_service
+ENV APP_HOME=/ugc_etl
 ENV APP_USER=web
 
 WORKDIR $APP_HOME
@@ -17,8 +17,6 @@ RUN  pip install --upgrade pip \
      && pip install -r requirements.txt
 
 COPY . .
-
-EXPOSE 8000
 
 RUN chown -R $APP_USER:$APP_USER $APP_HOME
 USER $APP_USER
