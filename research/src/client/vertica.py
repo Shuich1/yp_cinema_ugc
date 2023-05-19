@@ -1,7 +1,7 @@
-import time
 from contextlib import contextmanager
 from typing import ContextManager, Iterable
 
+import backoff
 import vertica_python
 
 from utils import split_into_chunks
@@ -18,18 +18,17 @@ class VerticaClient(DBClient):
     @contextmanager
     def connect(self) -> ContextManager:
         try:
-            for _ in range(60):
-                try:
-                    self.connection = vertica_python.connect(
-                        **self.connection_info,
-                    )
-                    break
-                except vertica_python.errors.ConnectionError:
-                    time.sleep(1)
+            self.connection = self._acquire_connection()
             yield
         finally:
-            self.connection.close()
-            self.connection = None
+            hasattr(self.connection, 'close') and self.connection.close()
+
+    @backoff.on_exception(backoff.expo,
+                          exception=vertica_python.errors.ConnectionError,
+                          max_time=10,
+                          max_value=2)
+    def _acquire_connection(self) -> vertica_python.Connection:
+        return vertica_python.connect(**self.connection_info)
 
     def prepare_database(self) -> None:
         with self.connection.cursor() as cursor:

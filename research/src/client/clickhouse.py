@@ -1,7 +1,7 @@
-import time
 from contextlib import contextmanager
 from typing import ContextManager, Iterable
 
+import backoff
 from clickhouse_driver import Client
 from clickhouse_driver.errors import NetworkError
 
@@ -20,15 +20,17 @@ class ClickHouseClient(DBClient):
     def connect(self) -> ContextManager:
         try:
             self.client = Client(**self.connection_info)
-            for _ in range(30):
-                try:
-                    self.client.execute('SELECT 1')
-                    break
-                except NetworkError:
-                    time.sleep(1)
+            self._check_connection()
             yield
         finally:
             self.client.disconnect()
+
+    @backoff.on_exception(backoff.expo,
+                          exception=NetworkError,
+                          max_time=60,
+                          max_value=2)
+    def _check_connection(self) -> None:
+        self.client.execute('SELECT 1')
 
     def prepare_database(self) -> None:
         self.client.execute('CREATE DATABASE IF NOT EXISTS movies')
