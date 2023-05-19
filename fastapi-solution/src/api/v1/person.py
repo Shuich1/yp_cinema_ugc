@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from src.models.person import Person
 from src.services.person import PersonService, get_person_service
+
 from ...services.jwt_handler import JWTBearer
 
 router = APIRouter()

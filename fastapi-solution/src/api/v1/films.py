@@ -2,6 +2,7 @@ from http import HTTPStatus
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+
 from ...models.film import Film
 from ...services.film import FilmService, get_film_service
 from ...services.jwt_handler import JWTBearer

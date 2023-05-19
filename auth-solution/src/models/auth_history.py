@@ -1,10 +1,11 @@
 import datetime
 import uuid
-from sqlalchemy import UniqueConstraint, ForeignKeyConstraint
 from dataclasses import dataclass
 
-from ..services.database import db
+from sqlalchemy import ForeignKeyConstraint, UniqueConstraint
+
 from ..core.config import db_config
+from ..services.database import db
 
 
 @dataclass

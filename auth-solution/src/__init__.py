@@ -8,13 +8,13 @@ from sqlalchemy import text
 from werkzeug.exceptions import HTTPException
 
 from .api.v1 import auth, roles
-from .core.config import settings, db_config
+from .core.config import db_config, settings
 from .services.database import db
+from .services.redis import jwt_redis_blocklist
 from .utils.commands import commands
 from .utils.error_handler import handle_exception
 from .utils.extensions import migrate, security
 from .utils.trace_functions import traced
-from .services.redis import jwt_redis_blocklist
 
 
 def create_app():

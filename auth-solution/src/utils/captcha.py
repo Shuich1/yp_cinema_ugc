@@ -3,8 +3,8 @@ from http import HTTPStatus
 
 import requests
 from flask import jsonify, request
-from ..core.config import settings
 
+from ..core.config import settings
 from .trace_functions import traced
 
 

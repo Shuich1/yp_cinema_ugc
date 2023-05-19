@@ -1,9 +1,10 @@
 import json
 import typing
-from enum import Enum, unique, auto
+from enum import Enum, auto, unique
 
 from flask import current_app, redirect, request, url_for
 from rauth import OAuth2Service
+
 from ..utils.trace_functions import traced
 
 if typing.TYPE_CHECKING:

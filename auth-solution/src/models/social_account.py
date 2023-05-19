@@ -1,8 +1,7 @@
 import uuid
 
-from ..services.database import db
-
 from ..core.config import db_config
+from ..services.database import db
 
 
 class SocialAccount(db.Model):
