@@ -1,7 +1,9 @@
+import time
 from contextlib import contextmanager
 from typing import ContextManager, Iterable
 
 from clickhouse_driver import Client
+from clickhouse_driver.errors import NetworkError
 
 from utils import split_into_chunks
 from .base import DBClient
@@ -18,6 +20,12 @@ class ClickHouseClient(DBClient):
     def connect(self) -> ContextManager:
         try:
             self.client = Client(**self.connection_info)
+            for _ in range(30):
+                try:
+                    self.client.execute('SELECT 1')
+                    break
+                except NetworkError:
+                    time.sleep(1)
             yield
         finally:
             self.client.disconnect()

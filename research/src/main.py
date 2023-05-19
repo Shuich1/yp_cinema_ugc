@@ -1,18 +1,50 @@
+import logging.config
+import os
+
 from client.clickhouse import ClickHouseClient
 from client.vertica import VerticaClient
-
 from suite import TestSuite
+
+logging.config.dictConfig({
+    'version': 1,
+    'disable_existing_loggers': True,
+    'handlers': {
+        'default': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['default'],
+            'level': 'INFO',
+        },
+    },
+})
+logger = logging.getLogger(__name__)
+
+info_template = '''
+Running speed tests
+- Initial rows:     {0}
+- Stress tests WPS: {1}'''
 
 
 def main():
-    test_suite = TestSuite(rows_count=100_000, wps=10_000)
+    rows_count = int(os.getenv('INITIAL_ROWS_COUNT', 100_000))
+    wps = int(os.getenv('STRESS_TESTS_WPS', 10_000))
 
-    clickhouse_client = ClickHouseClient(host='localhost')
+    test_suite = TestSuite(rows_count=rows_count, wps=wps)
+    logger.info(info_template.format(rows_count, wps))
+
+    clickhouse_client = ClickHouseClient(
+        host=os.getenv('CLICKHOUSE_HOST', 'localhost'),
+        port=int(os.getenv('CLICKHOUSE_PORT', 9000)),
+    )
     test_suite.register(clickhouse_client)
 
     vertica_client = VerticaClient(
-        host='127.0.0.1',
-        port=5433,
+        host=os.getenv('VERTICA_HOST', '127.0.0.1'),
+        port=int(os.getenv('VERTICA_PORT', 5433)),
         user='dbadmin',
         database='docker',
         autocommit=True,
@@ -20,7 +52,7 @@ def main():
     test_suite.register(vertica_client)
 
     for result in test_suite.run():
-        print(result.log_message)
+        logger.info(result.log_message)
 
 
 if __name__ == '__main__':

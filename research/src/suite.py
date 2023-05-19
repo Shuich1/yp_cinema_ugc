@@ -106,7 +106,7 @@ class TestSuite:
                          film_id: str,
                          user_id: str,
                          ) -> dict[str, float]:
-        max_producing_time = 5
+        max_producing_time = 10
         data = test_data(max_producing_time * self.wps)
 
         producer_thread = threading.Thread(

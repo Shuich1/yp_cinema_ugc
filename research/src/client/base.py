@@ -11,7 +11,7 @@ class DBClient(ABC):
     def connect(self) -> ContextManager:
         yield
 
-    def copy(self):
+    def copy(self) -> 'DBClient':
         return copy(self)
 
     @abstractmethod

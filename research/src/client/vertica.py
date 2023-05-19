@@ -1,3 +1,4 @@
+import time
 from contextlib import contextmanager
 from typing import ContextManager, Iterable
 
@@ -17,7 +18,14 @@ class VerticaClient(DBClient):
     @contextmanager
     def connect(self) -> ContextManager:
         try:
-            self.connection = vertica_python.connect(**self.connection_info)
+            for _ in range(60):
+                try:
+                    self.connection = vertica_python.connect(
+                        **self.connection_info,
+                    )
+                    break
+                except vertica_python.errors.ConnectionError:
+                    time.sleep(1)
             yield
         finally:
             self.connection.close()
