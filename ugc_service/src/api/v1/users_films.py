@@ -3,6 +3,7 @@ from http import HTTPStatus
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
+from models.users_films import UserFilmTimestamp
 from pydantic import BaseModel
 from services.users_films import UserFilmService, get_userfilm_service
 
@@ -20,14 +21,6 @@ class HTTPError(BaseModel):
         }
 
 
-class UserFilmTimestampSchema(BaseModel):
-    user_id: UUID
-    film_id: UUID
-    start_time: int
-    end_time: int
-    timestamp: datetime
-
-
 router = APIRouter()
 
 
@@ -39,7 +32,7 @@ router = APIRouter()
                 HTTPStatus.BAD_REQUEST: {'model': HTTPError}
              })
 async def create_user_film_timestamp(
-        user_film_data: UserFilmTimestampSchema,
+        user_film_data: UserFilmTimestamp,
         ugc_service: UserFilmService = Depends(get_userfilm_service),
 ):
     try:
