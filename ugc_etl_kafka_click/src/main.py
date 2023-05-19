@@ -19,7 +19,7 @@ def main():
             if kafka_bulk_data.payload:
                 transformed_data = transofmer.kafka_to_clickhouse(kafka_bulk_data, settings.CLICKHOUSE_TABLENAME)
                 loader.load(transformed_data)
-                sleep(5)
+            sleep(settings.SLEEP_INTERVAL)
 
 
 if __name__ == "__main__":

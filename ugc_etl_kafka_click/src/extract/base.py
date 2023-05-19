@@ -1,6 +1,6 @@
 from logging import getLogger
 from typing import Generator
-from kafka import KafkaConsumer
+from kafka import KafkaConsumer, errors
 from .schema import KafkaData, KafkaBulkData
 from functools import cached_property
 from core.config import settings
@@ -16,35 +16,45 @@ class KafkaExtractor:
         self.topic = topic
         self.server = server
         self.group_id = group_id
+        self._consumer = None
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         try:
-            if 'consumer' in self.__dict__:
-                self.consumer.close(autocommit=False)
+            if self._consumer:
+                self._consumer.close(autocommit=False)
         except Exception:
             logger.exception('Возникла ошибка при закрытии соединения Kafka, server=%s', self.server)
 
-    @cached_property
-    @backoff.on_exception(backoff.expo, ConnectionRefusedError, max_time=settings.BACKOFF_MAX_TIME)
+    @property
+    @backoff.on_exception(backoff.expo,
+                          (errors.NoBrokersAvailable, ConnectionRefusedError),
+                          max_time=settings.BACKOFF_MAX_TIME)
     def consumer(self) -> KafkaConsumer:
-        return KafkaConsumer(
-            self.topic,
-            bootstrap_servers=[self.server],
-            auto_offset_reset='earliest',
-            group_id=self.group_id,
-            value_deserializer=orjson.loads,
-            enable_auto_commit=False,
-            consumer_timeout_ms=1000
-        )
+        if not self._consumer:
+            self._consumer = KafkaConsumer(
+                self.topic,
+                bootstrap_servers=[self.server],
+                auto_offset_reset='earliest',
+                group_id=self.group_id,
+                value_deserializer=orjson.loads,
+                enable_auto_commit=False,
+                consumer_timeout_ms=1000
+            )
+        return self._consumer
 
-    @backoff.on_exception(backoff.expo, ConnectionRefusedError, max_time=settings.BACKOFF_MAX_TIME)
+    @backoff.on_exception(backoff.expo,
+                          (errors.NoBrokersAvailable, ConnectionRefusedError),
+                          max_time=settings.BACKOFF_MAX_TIME)
     def get_updates(self) -> Generator[KafkaBulkData | None, None, None]:
         while True:
             result = KafkaBulkData(payload=[])
-            response = self.consumer.poll(update_offsets=False, timeout_ms=1000)
+            response = self.consumer.poll(
+                timeout_ms=1000,
+                max_records=10000
+            )
             for records in response.values():
                 for record in records:
                     try:

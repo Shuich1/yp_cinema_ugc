@@ -1,5 +1,4 @@
-from clickhouse_driver import Client
-from functools import cached_property
+from clickhouse_driver import Client, errors
 from .schema import ClickhouseBulkData
 from core.config import settings
 import backoff
@@ -11,25 +10,29 @@ logger = getLogger(__name__)
 class ClickhouseLoader:
     def __init__(self, host: str) -> None:
         self.host = host
+        self._client = None
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         try:
-            if 'client' in self.__dict__:
+            if self._client and self._client.connection.connected:
                 self.client.disconnect()
         except Exception:
-            logger.exception('Возникла ошибка при закрытии соединения Clickouse, host=%s', self.host)
+            logger.exception(
+                'Возникла ошибка при закрытии соединения Clickouse, host=%s', self.host
+            )
 
-    @cached_property
-    @backoff.on_exception(backoff.expo, ConnectionRefusedError, max_time=settings.BACKOFF_MAX_TIME)
+    @property
     def client(self) -> Client:
-        return Client(
-            self.host,
-        )
+        if not self._client or not self._client.connection.connected:
+            self._client = Client(self.host)
+        return self._client
 
-    @backoff.on_exception(backoff.expo, ConnectionRefusedError, max_time=settings.BACKOFF_MAX_TIME)
+    @backoff.on_exception(backoff.expo,
+                          (errors.NetworkError, ConnectionRefusedError),
+                          max_time=settings.BACKOFF_MAX_TIME)
     def load(self, transformed_data: ClickhouseBulkData) -> None:
         logger.info('Loading data %s rows', transformed_data.count)
         self.client.execute(transformed_data.query)

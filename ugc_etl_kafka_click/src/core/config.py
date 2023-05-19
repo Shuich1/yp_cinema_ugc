@@ -13,7 +13,8 @@ class Settings(BaseSettings):
     KAFKA_GROUPID: str = Field(..., env='KAFKA_GROUPID')
     CLICKHOUSE_HOST: str = Field(..., env='CLICKHOUSE_HOST')
     CLICKHOUSE_TABLENAME: str = Field(..., env='CLICKHOUSE_TABLENAME')
-    BACKOFF_MAX_TIME: str = Field(..., env='BACKOFF_MAX_TIME')
+    BACKOFF_MAX_TIME: float = Field(..., env='BACKOFF_MAX_TIME')
+    SLEEP_INTERVAL: int = Field(..., env='SLEEP_INTERVAL')
 
     class Config:
         env_file = ENV_FILE_PATH

@@ -154,6 +154,14 @@ services:
       - environments/ugc_service
     ports:
       - 18000:8000
+
+  ugc_etl_kafka_click:
+    container_name: ugc_etl_kafka_click
+    build:
+      context: ./ugc_etl_kafka_click
+      dockerfile: Dockerfile
+    env_file:
+      - environments/ugc_etl_kafka_click
     
   flask_auth:
     container_name: flask_auth
@@ -223,6 +231,12 @@ services:
     image: zookeeper:3.5
     container_name: clickhouse-zookeeper
     hostname: clickhouse-zookeeper
+    healthcheck:
+      test: nc -z localhost 2181 || exit -1
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   clickhouse-node1:
     image: yandex/clickhouse-server:20.4
@@ -235,7 +249,8 @@ services:
       - ./ch_config/node1:/etc/clickhouse-server
       - ./ch_config/sql/node1.sql:/docker-entrypoint-initdb.d/init.sql
     depends_on:
-      - clickhouse-zookeeper
+      clickhouse-zookeeper:
+        condition: service_healthy
 
   clickhouse-node2:
     image: yandex/clickhouse-server:20.4
@@ -244,7 +259,8 @@ services:
     volumes:
       - ./ch_config/node2:/etc/clickhouse-server
     depends_on:
-      - clickhouse-zookeeper
+      clickhouse-zookeeper:
+        condition: service_healthy
 
   clickhouse-node3:
     image: yandex/clickhouse-server:20.4
@@ -254,7 +270,8 @@ services:
       - ./ch_config/node3:/etc/clickhouse-server
       - ./ch_config/sql/node3.sql:/docker-entrypoint-initdb.d/init.sql
     depends_on:
-      - clickhouse-zookeeper
+      clickhouse-zookeeper:
+        condition: service_healthy
 
   clickhouse-node4:
     image: yandex/clickhouse-server:20.4
@@ -263,7 +280,8 @@ services:
     volumes:
       - ./ch_config/node4:/etc/clickhouse-server
     depends_on:
-      - clickhouse-zookeeper
+      clickhouse-zookeeper:
+        condition: service_healthy
 
 volumes:
   database:
