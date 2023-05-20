@@ -6,6 +6,7 @@ all:
 	@echo "make createsuperuser - Создание суперпользователя."
 	@echo "make async_tests - Запуск тестов асинхронного сервиса."
 	@echo "make auth_tests - Запуск тестов сервиса авторизации."
+	@echo "make research_db - Запуск исследования СУБД"
 start:
 	docker-compose up -d --build
 stop:
@@ -18,3 +19,8 @@ async_tests:
 auth_tests:
 	docker-compose -f auth-solution/tests/functional/docker-compose.yml up --build --abort-on-container-exit
 	docker-compose -f auth-solution/tests/functional/docker-compose.yml down
+research_db:
+	cd research \
+	&& docker-compose up -d --build \
+	&& docker logs -f test_stand \
+	&& docker-compose down

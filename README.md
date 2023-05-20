@@ -18,6 +18,7 @@ and authentication API using Flask
 ## Usage
 - The Django admin will be available at http://127.0.0.1/admin
 - The FastAPI documentation will be available at http://127.0.0.1/api/openapi Check the documentation for more information about the API
+- [DBMS research](./research/README.md)
 
 ## Developers
 - Антон Костюченко (askostyu)
