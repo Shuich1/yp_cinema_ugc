@@ -77,7 +77,7 @@ node UGCService {
         database Kafka
     }
     
-    UGCAPI --> Kafka
+    UGC_Services --> Kafka
 
     frame UGC_ETL{
         file UGC_Extract
@@ -99,8 +99,8 @@ node UGCService {
 
 }
 
-Client <-up-> NGINX 
-SuperUser <-up-> NGINX
+Client <--> NGINX 
+SuperUser <--> NGINX
 NGINX <--> DjangoAdminPanel
 NGINX <.[#Purple].> DjangoAPI
 NGINX <--> AsyncAPI
