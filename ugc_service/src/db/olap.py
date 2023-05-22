@@ -1,6 +1,6 @@
-from typing import Optional
 from abc import ABC, abstractmethod
 from core.config import settings
+from typing import Optional
 from asynch import connect
 import backoff
 

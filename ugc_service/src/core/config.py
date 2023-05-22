@@ -1,8 +1,8 @@
 import os
 from logging import config as logging_config
-from core.logger import LOGGING
-from pydantic import BaseSettings, Field
 
+from core.logger import LOGGING
+from pydantic import BaseSettings
 
 # Корень проекта
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -10,13 +10,17 @@ ENV_FILE_PATH = os.path.join(BASE_DIR, 'core', '.env')
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = Field(..., env='PROJECT_NAME')
-    PROJECT_DESCRIPTION: str = Field(..., env='PROJECT_DESCRIPTION')
+    PROJECT_NAME: str
+    PROJECT_DESCRIPTION: str
 
     # Настройки Uvicorn
-    UVICORN_APP_NAME: str = Field(..., env='UVICORN_APP_NAME')
-    UVICORN_HOST: str = Field(..., env='UVICORN_HOST')
-    UVICORN_PORT: int = Field(..., env='UVICORN_PORT')
+    UVICORN_APP_NAME: str
+    UVICORN_HOST: str
+    UVICORN_PORT: int
+
+    KAFKA_HOST: str
+    KAFKA_PORT: int
+    KAFKA_VIEW_TOPIC: str
 
     class Config:
         env_file = ENV_FILE_PATH
