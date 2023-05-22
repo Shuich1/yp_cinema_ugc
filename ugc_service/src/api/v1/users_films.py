@@ -1,4 +1,3 @@
-from datetime import datetime
 from http import HTTPStatus
 from uuid import UUID
 
@@ -41,3 +40,24 @@ async def create_user_film_timestamp(
         return HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=exception.__str__())
 
     return BaseResponse(detail='ok')
+
+
+@router.get('/{user_id}/{film_id}/last_timestamp',
+            summary='Получить последнюю временную метку просмотренной пользователем части кинопроизведения',
+            description='Получить последнюю временную метку просмотренной пользователем части кинопроизведения',
+            responses={
+                HTTPStatus.OK: {'model': UserFilmTimestamp, 'description': 'Временная метка'},
+                HTTPStatus.NO_CONTENT: {'description': "Item not found"},
+                HTTPStatus.BAD_REQUEST: {'model': HTTPError}
+            })
+async def get_last_user_film_timestamp(
+        user_id: UUID, film_id: UUID,
+        ugc_service: UserFilmService = Depends(get_userfilm_service),
+):
+    try:
+        timestamp = await ugc_service.get_last_timestamp(user_id, film_id)
+    except BaseException as exception:
+        return HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=exception.__str__())
+    if not timestamp:
+        return
+    return timestamp

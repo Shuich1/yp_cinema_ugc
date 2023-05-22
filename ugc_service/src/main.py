@@ -19,12 +19,14 @@ app = FastAPI(
 
 @app.on_event('startup')
 async def startup():
-    # TODO
-    # olap.olap_bd =
+    olap.olap_bd = olap.ClickHouseOlap(
+        settings.CLICKHOUSE_HOST, settings.CLICKHOSE_PORT
+    )
     oltp.oltp_bd = oltp.KafkaOltp(
         f'{settings.KAFKA_HOST}:{settings.KAFKA_PORT}'
     )
     await oltp.oltp_bd.connect()
+    await olap.olap_bd.connect()
 
 
 @app.on_event('shutdown')
@@ -34,7 +36,7 @@ async def shutdown():
 
 app.include_router(
     users_films.router,
-    prefix='/api/v1/users_films',
+    prefix='/ugc/api/v1/users_films',
     tags=['users_films']
 )
 
