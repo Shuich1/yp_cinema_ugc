@@ -12,10 +12,6 @@ class GenericOlap(ABC):
     pass
 
     @abstractmethod
-    async def disconnect(self):
-        pass
-
-    @abstractmethod
     async def get_last_user_film_timestamp(self, user_id: UUID, film_id: UUID) -> UserFilmTimestamp:
         pass
 
@@ -51,9 +47,6 @@ class ClickHouseOlap(GenericOlap):
                 end_time=result['end_time'],
                 timestamp=result['event_time']
             )
-
-    async def disconnect(self) -> None:
-        await self.producer.stop()
 
 
 olap_bd: Optional[GenericOlap] = None
