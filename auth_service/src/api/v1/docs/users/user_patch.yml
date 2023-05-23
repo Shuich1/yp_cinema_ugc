@@ -1,0 +1,121 @@
+summary: Изменение данных пользователя
+description: API для изменения данных пользователя
+tags:
+  - v1/users
+security:
+  - BearerAuth: []
+parameters:
+  - in: path
+    name: user_id
+    schema:
+      type: string
+      format: uuid
+    required: true
+    description: UUID пользователя
+requestBody:
+  description: json с полями, которые нужно изменить
+  required: true
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          login:
+            type: string
+          roles:
+            type: array
+            items:
+              type: string
+      examples:
+        example:
+          summary: example
+          value:
+            roles: ['role1', 'role2']
+            login: 'new_login'
+
+responses:
+  200:
+    description: Success
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            login:
+              type: string
+            roles:
+              type: array
+              items:
+                type: string
+        examples:
+          example:
+            summary: example
+            value:
+              id: f2b6ce8a-4770-4550-b570-f6b040fdbb06
+              login: admin_user
+              roles:
+                - admin
+                - role4
+
+  400:
+    description: Bad request
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            result:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Invalid body request
+
+  401:
+    description: Unauthorized
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Missing Authorization Header
+
+  403:
+    description: Forbidden
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Access denied
+
+  422:
+    description: Unprocessable Entity
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Not enough segments

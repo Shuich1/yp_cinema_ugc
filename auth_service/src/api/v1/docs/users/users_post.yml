@@ -1,0 +1,120 @@
+summary: Добавление пользователя
+description: API для добавления пользователя
+tags:
+  - v1/users
+security:
+  - BearerAuth: []
+requestBody:
+  description: json с данными пользователя
+  required: true
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          login:
+            type: string
+          password:
+            type: string
+          id:
+            type: string
+            format: uuid
+            required: false
+          roles:
+            type: array
+            required: false
+            items:
+              type: string
+      examples:
+        example:
+          summary: example
+          value:
+            id: bbe2493b-f85c-43bb-bbe9-5764e4febf18 
+            name: new_user
+            password: password
+            roles: ["role1", "role2"]
+
+responses:
+  200:
+    description: Success
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            login:
+              type: string
+            roles:
+              type: array
+              items:
+                type: string
+        examples:
+          example:
+            summary: example
+            value:
+              id: f2b6ce8a-4770-4550-b570-f6b040fdbb06
+              login: new_user
+              roles: ["role1", "role2"]
+
+  400:
+    description: Bad request
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            result:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Invalid body request
+
+  401:
+    description: Unauthorized
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Missing Authorization Header
+
+  403:
+    description: Forbidden
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Access denied
+
+  422:
+    description: Unprocessable Entity
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Not enough segments

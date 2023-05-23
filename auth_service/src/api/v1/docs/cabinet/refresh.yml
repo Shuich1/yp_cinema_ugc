@@ -1,0 +1,95 @@
+summary: Обновление access token
+description: API для обновления access token
+tags:
+  - v1/cabinet
+security:
+  - BearerAuth: []
+requestBody:
+  description: json с access token
+  required: true
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          access_token:
+            type: string
+
+responses:
+  200:
+    description: Success
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            access_token:
+              type: string
+            refresh_token:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              access_token: eyJhbGci.OiJIUzI1N.iIXVCJ9TJ
+              refresh_token: eyJhbGci.OiJIUzI1N.iIXVCJ9TJ
+
+  400:
+    description: Bad request
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Invalid body request
+
+  401:
+    description: Unauthorized
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Missing Authorization Header
+
+  404:
+    description: Not found
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Active refresh_token was not found
+
+  422:
+    description: Unprocessable Entity
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Not enough segments

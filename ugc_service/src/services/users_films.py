@@ -5,6 +5,7 @@ from db.olap import GenericOlap, get_olap
 from db.oltp import GenericOltp, get_oltp
 from fastapi import Depends
 from models.users_films import UserFilmTimestamp
+from uuid import UUID
 
 
 class UserFilmService:
@@ -18,6 +19,11 @@ class UserFilmService:
             data=user_film_data.json(),
             topic=settings.KAFKA_VIEW_TOPIC
         )
+
+    async def get_last_timestamp(self, user_id: UUID, film_id: UUID):
+        print(f"{user_id=} | {film_id=}")
+        timestamp = await self.olap.get_last_user_film_timestamp(user_id, film_id)
+        return timestamp
 
 
 @lru_cache()

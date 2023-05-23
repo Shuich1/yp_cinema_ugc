@@ -1,0 +1,97 @@
+summary: Просмотр списка пользователей
+description: API для просмотра списка пользователей
+tags:
+  - v1/users
+security:
+  - BearerAuth: []
+parameters:
+  - in: query
+    name: offset
+    schema:
+      type: integer
+    description: The number of items to skip before starting to collect the result set.
+  - in: query
+    name: limit
+    schema:
+      type: integer
+    description: The numbers of items to return.
+
+responses:
+
+  200:
+    description: Success
+    content:
+      application/json:
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              login:
+                type: string
+              roles:
+                type: array
+                items:
+                  type: string
+        examples:
+          example:
+            summary: example
+            value:
+              - id: 5c63dcd0-5579-47c1-a997-44099ff1277e
+                login: user
+                roles:
+                  - role1
+                  - role2
+              - id: f2b6ce8a-4770-4550-b570-f6b040fdbb06
+                login: admin_user
+                roles:
+                  - admin
+                  - role3
+
+  400:
+    description: Bad request
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Invalid body request
+
+  403:
+    description: Forbidden
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Access denied
+
+  422:
+    description: Unprocessable Entity
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Not enough segments
