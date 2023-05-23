@@ -1,0 +1,87 @@
+summary: Получения информации о пользователе
+description: API для получения информации о пользователе
+tags:
+  - v1/users
+security:
+  - BearerAuth: []
+parameters:
+  - in: path
+    name: user_id
+    schema:
+      type: string
+      format: uuid
+    required: true
+    description: UUID пользователя
+
+responses:
+  
+  200:
+    description: Success
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            login:
+              type: string
+            roles:
+              type: array
+              items:
+                type: string
+        examples:
+          example:
+            summary: example
+            value:
+              id: f2b6ce8a-4770-4550-b570-f6b040fdbb06
+              login: admin_user
+              roles:
+                - admin
+                - role4
+  
+  401:
+    description: Unauthorized
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Missing Authorization Header
+
+  403:
+    description: Forbidden
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Access denied
+
+  422:
+    description: Unprocessable Entity
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Not enough segments

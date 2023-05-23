@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     CLICKHOUSE_HOST: str
     CLICKHOSE_PORT: str
 
+    # Auth
+    authjwt_secret_key: str = "secret"
+
     class Config:
         env_file = ENV_FILE_PATH
 

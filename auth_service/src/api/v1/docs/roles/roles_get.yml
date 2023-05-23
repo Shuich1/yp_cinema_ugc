@@ -1,0 +1,87 @@
+summary: Просмотр списка ролей
+description: API для просмотра списка ролей
+tags:
+  - v1/roles
+security:
+  - BearerAuth: []
+parameters:
+  - in: query
+    name: offset
+    schema:
+      type: integer
+    description: The number of items to skip before starting to collect the result set.
+  - in: query
+    name: limit
+    schema:
+      type: integer
+    description: The numbers of items to return.
+
+responses:
+
+  200:
+    description: Success
+    content:
+      application/json:
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              name:
+                type: string
+        examples:
+          example:
+            summary: example
+            value:
+              - id: 5c63dcd0-5579-47c1-a997-44099ff1277e
+                name: role 1
+              - id: f2b6ce8a-4770-4550-b570-f6b040fdbb06
+                name: role 1
+
+  400:
+    description: Bad request
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Invalid body request
+
+  403:
+    description: Forbidden
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Access denied
+
+  422:
+    description: Unprocessable Entity
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Not enough segments

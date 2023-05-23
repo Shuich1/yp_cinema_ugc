@@ -1,0 +1,61 @@
+summary: Вход пользователя через Google oauth2
+description: API для входа пользователя через Google oauth2
+tags:
+  - ouath
+parameters:
+  - in: path
+    name: code
+    schema:
+      type: string
+    required: true
+    description: Verification code
+
+
+responses:
+  200:
+    description: Success
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            access_token:
+              type: string
+            refresh_token:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              access_token: eyJhbGci.OiJIUzI.1NiIXVCJ9TJ
+              refresh_token: eyJhbGciOi.JIUzI1NiI.XVCJ9TJ
+
+  400:
+    description: Bad request
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: Invalid body request
+
+  409:
+    description: Not found
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            msg:
+              type: string
+        examples:
+          example:
+            summary: example
+            value:
+              msg: The email is already used
