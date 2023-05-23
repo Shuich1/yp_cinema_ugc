@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     CLICKHOSE_PORT: str
 
     # Auth
-    authjwt_secret_key: str = "secret"
+    authjwt_secret_key: str
 
     class Config:
         env_file = ENV_FILE_PATH

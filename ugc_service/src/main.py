@@ -5,7 +5,7 @@ from api.v1 import users_films
 from core.config import settings
 from core.logger import LOGGING
 from db import olap, oltp
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import ORJSONResponse
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
@@ -18,6 +18,19 @@ app = FastAPI(
     openapi_url='/api/openapi.json',
     default_response_class=ORJSONResponse,
 )
+
+
+@AuthJWT.load_config
+def get_config():
+    return settings
+
+
+@app.exception_handler(AuthJWTException)
+def authjwt_exception_handler(request: Request, exc: AuthJWTException):
+    return ORJSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.message}
+    )
 
 
 @app.on_event('startup')
@@ -34,7 +47,6 @@ async def startup():
 
 @app.on_event('shutdown')
 async def shutdown():
-    # await olap.olap_bd.disconnect()
     await oltp.oltp_bd.disconnect()
 
 app.include_router(
