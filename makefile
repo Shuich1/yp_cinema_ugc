@@ -23,4 +23,4 @@ research_db:
 	cd research \
 	&& docker-compose up -d --build \
 	&& docker logs -f test_stand \
-	&& docker-compose down
+	&& docker-compose down -v
