@@ -25,7 +25,7 @@ class VerticaClient(DBClient):
 
     @backoff.on_exception(backoff.expo,
                           exception=vertica_python.errors.ConnectionError,
-                          max_time=10,
+                          max_time=60,
                           max_value=2)
     def _acquire_connection(self) -> vertica_python.Connection:
         return vertica_python.connect(**self.connection_info)

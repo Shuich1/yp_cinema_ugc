@@ -1,20 +1,24 @@
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from functools import partial
 from queue import Queue
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, Callable, Any
 
 from client.base import DBClient
 from data import test_data
 from utils import measure_time
 
 log_template = '''
-DBMS:                                    {0}
-- Insert 100k rows:                      {1:.6f} s
-- Retrieve last timecode:                {2:.6f} s
-- Retrieve most viewed films:            {3:.6f} s
-- Retrieve last timecode under load:     {4:.6f} s
-- Retrieve most viewed films under load: {5:.6f} s
+DBMS:                                     {0}
+- Insert 100k rows:                       {1:.6f} s
+- Retrieve last timecode:                 {2:.6f} s
+- Retrieve last timecode under load:      {4:.6f} s
+- Retrieve last timecode in parallel:     {6:.6f} s
+- Retrieve most viewed films:             {3:.6f} s
+- Retrieve most viewed films under load:  {5:.6f} s
+- Retrieve most viewed films in parallel: {7:.6f} s
 '''
 
 
@@ -26,6 +30,8 @@ class TestResult:
     retrieve_most_viewed: float
     retrieve_last_timecode_under_load: float
     retrieve_most_viewed_under_load: float
+    retrieve_last_timecode_in_parallel: float
+    retrieve_most_viewed_in_parallel: float
 
     @property
     def log_message(self):
@@ -36,15 +42,19 @@ class TestResult:
             self.retrieve_most_viewed,
             self.retrieve_last_timecode_under_load,
             self.retrieve_most_viewed_under_load,
+            self.retrieve_last_timecode_in_parallel,
+            self.retrieve_most_viewed_in_parallel,
         )
 
 
 class TestSuite:
-    def __init__(self, rows_count: int, wps: int):
+    def __init__(self, rows_count: int, wps: int, readers_count: int):
         self.clients = []
         self.queue = Queue()
         self.rows_count = rows_count
         self.wps = wps
+        self.readers_count = readers_count
+
         self.stress_tests_finished = False
 
     def register(self, client: DBClient) -> None:
@@ -55,13 +65,19 @@ class TestSuite:
             initial_data = test_data(self.rows_count)
             film_id, user_id, *_ = next(initial_data)
 
+            self.prepare_database(client, initial_data)
+
             static_tests_result = self.run_static_tests(
                 client,
-                initial_data,
                 film_id,
                 user_id,
             )
             stress_tests_result = self.run_stress_tests(
+                client,
+                film_id,
+                user_id,
+            )
+            parallel_read_tests_result = self.run_parallel_read_tests(
                 client,
                 film_id,
                 user_id,
@@ -71,23 +87,30 @@ class TestSuite:
                 dbms_name=client.dbms_name,
                 **static_tests_result,
                 **stress_tests_result,
+                **parallel_read_tests_result,
             )
 
     @staticmethod
-    def run_static_tests(client: DBClient,
-                         initial_data: Iterable[tuple],
-                         film_id: str,
-                         user_id: str,
-                         ) -> dict[str, float]:
+    def prepare_database(client: DBClient,
+                         initial_data:
+                         Iterable[tuple],
+                         ) -> None:
         with client.connect():
             client.prepare_database()
             client.insert_data(initial_data)
 
-            time.sleep(1)  # Give dbms some time to update indices
+        time.sleep(1)  # Give dbms some time to update indices
+
+    @staticmethod
+    def run_static_tests(client: DBClient,
+                         film_id: str,
+                         user_id: str,
+                         ) -> dict[str, float]:
+        with client.connect():
             data = list(test_data(100_000))
             t1 = measure_time(client.insert_data, data)
+            time.sleep(1)  # Give dbms some time to update indices
 
-            time.sleep(1)
             t2 = measure_time(
                 client.retrieve_last_timecode,
                 film_id, user_id,
@@ -126,7 +149,8 @@ class TestSuite:
         with client.connect():
             t1 = measure_time(
                 client.retrieve_last_timecode,
-                film_id, user_id,
+                film_id,
+                user_id,
                 repeats=100,
             )
             t2 = measure_time(client.retrieve_most_viewed, repeats=100)
@@ -137,6 +161,66 @@ class TestSuite:
             'retrieve_last_timecode_under_load': t1,
             'retrieve_most_viewed_under_load': t2,
         }
+
+    def run_parallel_read_tests(self,
+                                client: DBClient,
+                                film_id: str,
+                                user_id: str,
+                                ) -> dict[str, float]:
+        r1 = self.run_in_parallel(
+            client,
+            partial(
+                self.measure_retrieve_last_timecode,
+                film_id=film_id,
+                user_id=user_id,
+            ),
+            self.readers_count,
+        )
+        t1 = sum(r1) / self.readers_count
+
+        r2 = self.run_in_parallel(
+            client,
+            self.measure_retrieve_most_viewed,
+            self.readers_count,
+        )
+        t2 = sum(r2) / self.readers_count
+
+        return {
+            'retrieve_last_timecode_in_parallel': t1,
+            'retrieve_most_viewed_in_parallel': t2,
+        }
+
+    @staticmethod
+    def run_in_parallel(client: DBClient,
+                        client_method: Callable,
+                        threads_count: int,
+                        ) -> Any:
+        # Use a separate client for each reader's thread
+        clients = [client.copy() for _ in range(threads_count)]
+
+        with ThreadPoolExecutor(threads_count) as pool:
+            results = pool.map(client_method, clients)
+
+        return list(results)
+
+    @staticmethod
+    def measure_retrieve_last_timecode(client: DBClient,
+                                       *,
+                                       film_id: str,
+                                       user_id: str,
+                                       ) -> float:
+        with client.connect():
+            return measure_time(
+                client.retrieve_last_timecode,
+                film_id,
+                user_id,
+                repeats=100,
+            )
+
+    @staticmethod
+    def measure_retrieve_most_viewed(client: DBClient) -> float:
+        with client.connect():
+            return measure_time(client.retrieve_most_viewed, repeats=100)
 
     def produce(self, data: Iterable[tuple], period: float) -> None:
         next_produce = time.time()

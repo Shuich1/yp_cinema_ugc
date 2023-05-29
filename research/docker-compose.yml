@@ -8,6 +8,7 @@ services:
     environment:
       - INITIAL_ROWS_COUNT=10_000_000
       - STRESS_TESTS_WPS=10_000
+      - READERS_COUNT=10
       - CLICKHOUSE_HOST=clickhouse
       - VERTICA_HOST=vertica
 

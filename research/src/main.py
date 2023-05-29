@@ -26,15 +26,21 @@ logger = logging.getLogger(__name__)
 info_template = '''
 Running speed tests
 - Initial rows:     {0}
-- Stress tests WPS: {1}'''
+- Stress tests WPS: {1}
+- Readers count:    {2}'''
 
 
 def main():
     rows_count = int(os.getenv('INITIAL_ROWS_COUNT', 100_000))
     wps = int(os.getenv('STRESS_TESTS_WPS', 10_000))
+    readers_count = int(os.getenv('READERS_COUNT', 5))
 
-    test_suite = TestSuite(rows_count=rows_count, wps=wps)
-    logger.info(info_template.format(rows_count, wps))
+    test_suite = TestSuite(
+        rows_count=rows_count,
+        wps=wps,
+        readers_count=readers_count,
+    )
+    logger.info(info_template.format(rows_count, wps, readers_count))
 
     clickhouse_client = ClickHouseClient(
         host=os.getenv('CLICKHOUSE_HOST', 'localhost'),

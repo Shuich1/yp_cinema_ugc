@@ -20,6 +20,10 @@
 
 На этом этапе, как и на предыдущем, производятся замеры времени выборки, но при этом моделируется нагрузка на СУБД. В отдельных потоках производится запись данных в очередь со скоростью `STRESS_TESTS_WPS` строк в секунду и загрузка этих данных в базу
 
+### 4. Замеры времени отклика при параллельном чтении
+
+На этом этапе производятся замеры среднего времени выполнения запросов на чтение (последняя временная метка и наиболее просматриваемые фильмы) при параллельной работе нескольких клиентов
+
 ### Запуск тестового стенда
 
 Запуск производится командой `make research_db`. При этом поднимаются контейнеры СУБД и контейнер тестового стенда, результаты замеров выводятся в консоль, а после завершения тестирования все контейнеры останавливаются
@@ -34,20 +38,25 @@
 Running speed tests
 - Initial rows:     10000000
 - Stress tests WPS: 10000
+- Readers count:    10
 
 DBMS:                                    ClickHouse
-- Insert 100k rows:                      0.356814 s
-- Retrieve last timecode:                0.004419 s
-- Retrieve most viewed films:            0.090357 s
-- Retrieve last timecode under load:     0.004967 s
-- Retrieve most viewed films under load: 0.095753 s
+- Insert 100k rows:                       0.363298 s
+- Retrieve last timecode:                 0.004817 s
+- Retrieve last timecode under load:      0.005031 s
+- Retrieve last timecode in parallel:     0.021528 s
+- Retrieve most viewed films:             0.091464 s
+- Retrieve most viewed films under load:  0.095282 s
+- Retrieve most viewed films in parallel: 0.858753 s
 
 DBMS:                                    Vertica
-- Insert 100k rows:                      1.655985 s
-- Retrieve last timecode:                0.029854 s
-- Retrieve most viewed films:            0.194169 s
-- Retrieve last timecode under load:     0.030799 s
-- Retrieve most viewed films under load: 0.198548 s
+- Insert 100k rows:                       1.686621 s
+- Retrieve last timecode:                 0.035702 s
+- Retrieve last timecode under load:      0.035024 s
+- Retrieve last timecode in parallel:     0.234355 s
+- Retrieve most viewed films:             0.178715 s
+- Retrieve most viewed films under load:  0.190092 s
+- Retrieve most viewed films in parallel: 1.054731 s
 ```
 
 Очевидным выбором среди исследуемых СУБД является ClickHouse
