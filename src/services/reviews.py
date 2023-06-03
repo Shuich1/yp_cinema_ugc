@@ -3,32 +3,17 @@ from uuid import UUID
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.results import UpdateResult
+from pymongo import ReturnDocument
 
 from db import mongo
 from models import Review, ReviewVote
 from typing import Literal
-from collections import OrderedDict
-
-
-class ReviewsServiceException(Exception):
-    ...
-
-
-class ReviewDoesNotExist(ReviewsServiceException):
-    ...
-
-
-class ReviewNotEditable(ReviewsServiceException):
-    ...
-
-
-class ReviewVoteDoesNotExist(ReviewsServiceException):
-    ...
+from services.exceptions import ResourceDoesNotExist, ResourceAlreadyExists
 
 
 class ReviewsService(ABC):
     @abstractmethod
-    async def get_review_list(self, film_id: UUID, sort_by: OrderedDict[str, str], offset: int, limit: int) -> list[Review]:
+    async def get_review_list(self, film_id: UUID | None, user_id: UUID | None, sort_by: dict, offset: int, limit: int) -> list[Review]:
         ...
 
     @abstractmethod
@@ -40,15 +25,19 @@ class ReviewsService(ABC):
         ...
 
     @abstractmethod
-    async def delete_review(self, review_id: UUID, user_id: UUID) -> None:
+    async def delete_review(self, review_id: UUID) -> None:
         ...
 
     @abstractmethod
-    async def rate_review(self, review_id: UUID, user_id: UUID, vote: str) -> ReviewVote:
+    async def create_review_vote(self, review_id: UUID, user_id: UUID, vote: str) -> ReviewVote:
         ...
 
     @abstractmethod
     async def get_review_vote(self, review_id: UUID, user_id: UUID) -> ReviewVote:
+        ...
+
+    @abstractmethod
+    async def update_review_vote(self, review_id: UUID, user_id: UUID, vote: str) -> ReviewVote:
         ...
 
     @abstractmethod
@@ -60,17 +49,39 @@ class MongoDBReviewsService(ReviewsService):
     def __init__(self, mongo_client: AsyncIOMotorClient) -> None:
         self.client = mongo_client
 
-    async def get_review_list(self, film_id: UUID, sort_by: OrderedDict[str, str], offset: int, limit: int) -> list[Review]:
+    async def get_review_list(self, film_id: UUID | None, user_id: UUID | None, sort_by: dict, offset: int, limit: int) -> list[Review]:
         add_fields, sort = self._get_sorting_params(sort_by)
         pipeline = [
-            {'$match': {'film_id': film_id}},
             {'$addFields': add_fields},
             {'$sort': sort or {'_id': 1}},
             {'$skip': offset},
             {'$limit': limit},
         ]
+        match = {}
+        if film_id:
+            match['film_id'] = film_id
+        if user_id:
+            match['user_id'] = user_id
+        if match:
+            pipeline.insert(0, {'$match': match})
+
         reviews = self.client.films.reviews.aggregate(pipeline)
         return [Review(**review) async for review in reviews]
+
+    @staticmethod
+    def _get_sorting_params(sort_by: dict) -> tuple[dict, dict]:
+        add_fields = {}
+        sort = {}
+        for field, order in sort_by.items():
+            if field == 'created':
+                sort['created'] = 1 if order == 'asc' else -1
+            elif field == 'rating':
+                add_fields['rating'] = {'$subtract': ['$likes', '$dislikes']}
+                sort['rating'] = 1 if order == 'asc' else -1
+            elif field == 'votes':
+                add_fields['votes'] = {'$sum': ['$likes', '$dislikes']}
+                sort['votes'] = 1 if order == 'asc' else -1
+        return add_fields, sort
 
     async def create_review(self, film_id: UUID, user_id: UUID, body: str) -> Review:
         review = Review(film_id=film_id, user_id=user_id, body=body)
@@ -80,36 +91,32 @@ class MongoDBReviewsService(ReviewsService):
     async def get_review(self, review_id: UUID) -> Review:
         review = await self.client.films.reviews.find_one({'review_id': review_id})
         if not review:
-            raise ReviewDoesNotExist(f'No reviews with {review_id=}')
+            raise ResourceDoesNotExist(f'No reviews with {review_id=}')
         return Review(**review)
 
-    async def delete_review(self, review_id: UUID, user_id: UUID) -> None:
-        review = await self.client.films.reviews.find_one({'review_id': review_id})
-        if not review:
-            raise ReviewDoesNotExist(f'No reviews with {review_id=}')
-        elif not review.get('user_id') == user_id:
-            raise ReviewNotEditable(f'Author {review_id=} does not match {user_id=}')
+    async def delete_review(self, review_id: UUID) -> None:
         async with await self.client.start_session() as session:
             async with session.start_transaction():
                 await self.client.films.reviews.delete_one({'review_id': review_id})
                 await self.client.films.review_votes.delete_many({'review_id': review_id})
 
-    async def rate_review(self, review_id: UUID, user_id: UUID, vote: str) -> ReviewVote:
+    async def create_review_vote(self, review_id: UUID, user_id: UUID, vote: str) -> ReviewVote:
         review_vote = ReviewVote(review_id=review_id, user_id=user_id, vote=vote)
         async with await self.client.start_session() as session:
             async with session.start_transaction():
                 result = await self.client.films.review_votes.update_one(
                     filter=review_vote.dict(exclude={'vote'}),
-                    update={'$set': review_vote.dict()},
+                    update={'$setOnInsert': review_vote.dict()},
                     upsert=True,
                 )
-                votes_update = self._get_votes_update(result, vote)
-                if votes_update:
-                    await self.client.films.reviews.update_one(
-                        filter={'review_id': review_id},
-                        update={'$inc': votes_update},
-                    )
-        return review_vote
+                if result.matched_count:
+                    raise ResourceAlreadyExists(f'Vote for {review_id=}, {user_id=} already exists')
+
+                await self.client.films.reviews.update_one(
+                    filter={'review_id': review_id},
+                    update={'$inc': {'likes' if vote == 'like' else 'dislikes': 1}},
+                )
+                return review_vote
 
     async def get_review_vote(self, review_id: UUID, user_id: UUID) -> ReviewVote:
         review_vote = await self.client.films.review_votes.find_one({
@@ -117,8 +124,31 @@ class MongoDBReviewsService(ReviewsService):
             'user_id': user_id,
         })
         if not review_vote:
-            raise ReviewVoteDoesNotExist(f'No votes for {review_id=}, {user_id=}')
+            raise ResourceDoesNotExist(f'No votes for {review_id=}, {user_id=}')
         return ReviewVote(**review_vote)
+
+    async def update_review_vote(self, review_id: UUID, user_id: UUID, vote: str) -> ReviewVote:
+        review_vote = ReviewVote(review_id=review_id, user_id=user_id, vote=vote)
+        async with await self.client.start_session() as session:
+            async with session.start_transaction():
+                result = await self.client.films.review_votes.update_one(
+                    filter=review_vote.dict(exclude={'vote'}),
+                    update={'$set': review_vote.dict()},
+                )
+
+                if not result.matched_count:
+                    raise ResourceDoesNotExist(f'Vote for {review_id=}, {user_id=} does not exist')
+
+                if result.modified_count:
+                    await self.client.films.reviews.update_one(
+                        filter={'review_id': review_id},
+                        update={'$inc': {
+                            'likes' if vote == 'like' else 'dislikes': 1,
+                            'dislikes' if vote == 'like' else 'likes': -1,
+                        }},
+                    )
+
+                return review_vote
 
     async def delete_review_vote(self, review_id: UUID, user_id: UUID) -> None:
         async with await self.client.start_session() as session:
@@ -127,39 +157,15 @@ class MongoDBReviewsService(ReviewsService):
                     'review_id': review_id,
                     'user_id': user_id,
                 })
-                if result:
-                    vote = result.get('vote')
-                    votes_update = {'likes' if vote == 'like' else 'dislikes': -1}
-                    await self.client.films.reviews.update_one(
-                        filter={'review_id': review_id},
-                        update={'$inc': votes_update},
-                    )
 
-    @staticmethod
-    def _get_sorting_params(sort_by: OrderedDict[str, str]) -> tuple[dict, dict]:
-        add_fields = {}
-        sort = {}
-        for field, order in sort_by.items():
-            if field == 'created_at':
-                sort['created_at'] = 1 if order == 'asc' else -1
-            elif field == 'rating':
-                add_fields['rating'] = {'$subtract': ['$likes', '$dislikes']}
-                sort['rating'] = 1 if order == 'asc' else -1
-            elif field == 'votes':
-                add_fields['votes'] = {'$sum': ['$likes', '$dislikes']}
-                sort['votes'] = 1 if order == 'asc' else -1
-        return add_fields, sort
+                if not result:
+                    raise ResourceDoesNotExist(f'Vote for {review_id=}, {user_id=} does not exist')
 
-    @staticmethod
-    def _get_votes_update(result: UpdateResult, vote: str) -> dict | None:
-        if result.matched_count and not result.modified_count:
-            return None
-        elif not result.matched_count and not result.modified_count:
-            return {'likes' if vote == 'like' else 'dislikes': 1}
-        elif vote == 'like':
-            return {'likes': 1, 'dislikes': -1}
-        else:
-            return {'likes': -1, 'dislikes': 1}
+                vote = result.get('vote')
+                await self.client.films.reviews.update_one(
+                    filter={'review_id': review_id},
+                    update={'$inc': {'likes' if vote == 'like' else 'dislikes': -1}},
+                )
 
 
 async def get_reviews_service() -> ReviewsService:

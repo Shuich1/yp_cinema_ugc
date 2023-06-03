@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from typing import Literal, Callable
 
 from fastapi import Query
@@ -19,9 +18,9 @@ def get_sorting_params(fields: list[str], *, default: str | None = None) -> Call
 
     def sorting_params(
             sort: list[Literal[options]] | None = Query([default])  # noqa
-    ) -> OrderedDict[str, str]:
+    ) -> dict:
 
-        parsed_params = OrderedDict()
+        parsed_params = {}
         for param in sort:
             field, order = param.split(':')
             if field not in parsed_params:

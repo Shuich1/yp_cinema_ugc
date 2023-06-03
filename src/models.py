@@ -2,13 +2,15 @@ from datetime import datetime
 from uuid import UUID, uuid4
 from typing import Literal
 
-from pydantic import BaseModel, Field, conset
+from pydantic import BaseModel, Field
 
 
 class FilmRating(BaseModel):
     film_id: UUID
     user_id: UUID
     rating: int
+    created: datetime = Field(default_factory=datetime.utcnow)
+    updated: datetime = Field(default_factory=datetime.utcnow)
 
 
 class OverallFilmRating(BaseModel):
@@ -22,7 +24,7 @@ class Review(BaseModel):
     film_id: UUID
     user_id: UUID
     body: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created: datetime = Field(default_factory=datetime.utcnow)
     likes: int = 0
     dislikes: int = 0
 
@@ -36,4 +38,4 @@ class ReviewVote(BaseModel):
 class Bookmark(BaseModel):
     film_id: UUID
     user_id: UUID
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created: datetime = Field(default_factory=datetime.utcnow)
