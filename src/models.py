@@ -31,3 +31,9 @@ class ReviewVote(BaseModel):
     review_id: UUID
     user_id: UUID
     vote: Literal['like', 'dislike']
+
+
+class Bookmark(BaseModel):
+    film_id: UUID
+    user_id: UUID
+    created_at: datetime = Field(default_factory=datetime.utcnow)

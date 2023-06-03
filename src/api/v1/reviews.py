@@ -3,11 +3,11 @@ from http import HTTPStatus
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Body, HTTPException, Query
+from fastapi import APIRouter, Depends, Body, HTTPException
 
+from common.utils import get_page_params, get_sorting_params
 from models import Review, ReviewVote
 from services.reviews import get_reviews_service, ReviewsService, ReviewDoesNotExist, ReviewVoteDoesNotExist, ReviewNotEditable
-from common.utils import get_sorting_params
 
 router = APIRouter(prefix='/reviews', tags=['reviews'])
 
@@ -17,8 +17,7 @@ router = APIRouter(prefix='/reviews', tags=['reviews'])
 @router.get('/')
 async def get_review_list(
         film_id: UUID,
-        offset: int | None = Query(0, ge=0),
-        limit: int | None = Query(10, ge=0, le=100),
+        paginate_by: dict = Depends(get_page_params()),
         sort_by: OrderedDict = Depends(
             get_sorting_params(
                 ['created_at', 'rating', 'votes'],
@@ -30,8 +29,7 @@ async def get_review_list(
     return await service.get_review_list(
         film_id=film_id,
         sort_by=sort_by,
-        offset=offset,
-        limit=limit,
+        **paginate_by,
     )
 
 
@@ -70,7 +68,7 @@ async def delete_review(
     user_id = UUID('ad5953d0-0af7-44bc-8963-6f606f59747d')
 
     try:
-        return await service.delete_review(review_id=review_id, user_id=user_id)
+        await service.delete_review(review_id=review_id, user_id=user_id)
     except ReviewDoesNotExist:
         raise HTTPException(HTTPStatus.NOT_FOUND, 'Review not found')
     except ReviewNotEditable:
