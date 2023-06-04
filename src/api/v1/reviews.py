@@ -10,8 +10,9 @@ from api.schemas import (
     ReviewVoteResponse,
     ReviewVoteCreate,
     ReviewVoteUpdate,
+    APIException,
 )
-from common.utils import get_page_params, get_sorting_params
+from api.utils import get_page_params, get_sorting_params
 from services.exceptions import ResourceDoesNotExist, ResourceAlreadyExists
 from services.reviews import get_reviews_service, ReviewsService
 
@@ -58,9 +59,10 @@ async def create_review(
     return ReviewResponse(review=review)
 
 
-@router.get('/{review_id}', responses={
-    404: {'description': 'Not Found'},
-})
+@router.get(
+    '/{review_id}',
+    responses={404: {'description': 'Not Found', 'model': APIException}},
+)
 async def get_review(
         review_id: UUID,
         service: ReviewsService = Depends(get_reviews_service),
@@ -68,15 +70,19 @@ async def get_review(
     try:
         review = await service.get_review(review_id=review_id)
     except ResourceDoesNotExist:
-        raise HTTPException(HTTPStatus.NOT_FOUND, 'Нет такой рецензии')
+        raise HTTPException(HTTPStatus.NOT_FOUND, 'Review not found')
 
     return ReviewResponse(review=review)
 
 
-@router.delete('/{review_id}', status_code=HTTPStatus.NO_CONTENT, responses={
-    403: {'description': 'Unauthorized'},
-    404: {'description': 'Not Found'},
-})
+@router.delete(
+    '/{review_id}',
+    status_code=HTTPStatus.NO_CONTENT,
+    responses={
+        403: {'description': 'Unauthorized', 'model': APIException},
+        404: {'description': 'Not Found', 'model': APIException},
+    },
+)
 async def delete_review(
         review_id: UUID,
         # ToDo: _user_id from token
@@ -90,17 +96,21 @@ async def delete_review(
     try:
         review = await service.get_review(review_id=review_id)
     except ResourceDoesNotExist:
-        raise HTTPException(HTTPStatus.NOT_FOUND, 'Нет такой рецензии')
+        raise HTTPException(HTTPStatus.NOT_FOUND, 'Review not found')
 
     if review.user_id != _user_id:
-        raise HTTPException(HTTPStatus.UNAUTHORIZED, 'Можно удалить только свою рецензию')
+        raise HTTPException(
+            HTTPStatus.UNAUTHORIZED,
+            'Only owners can delete their reviews',
+        )
 
     await service.delete_review(review_id=review_id)
 
 
-@router.post('/{review_id}/votes', responses={
-    409: {'description': 'Conflict'},
-})
+@router.post(
+    '/{review_id}/votes',
+    responses={409: {'description': 'Conflict', 'model': APIException}},
+)
 async def create_review_vote(
         review_id: UUID,
         schema: ReviewVoteCreate,
@@ -117,15 +127,18 @@ async def create_review_vote(
             **schema.dict(),
         )
     except ResourceAlreadyExists:
-        raise HTTPException(HTTPStatus.CONFLICT, 'Уже голосовал')
+        raise HTTPException(HTTPStatus.CONFLICT, 'Vote already exists')
 
     return ReviewVoteResponse(review_vote=vote)
 
 
-@router.put('/{review_id}/votes/{user_id}', responses={
-    403: {'description': 'Unauthorized'},
-    404: {'description': 'Not Found'},
-})
+@router.put(
+    '/{review_id}/votes/{user_id}',
+    responses={
+        403: {'description': 'Unauthorized', 'model': APIException},
+        404: {'description': 'Not Found', 'model': APIException},
+    },
+)
 async def update_review_vote(
         review_id: UUID,
         user_id: UUID,
@@ -137,19 +150,23 @@ async def update_review_vote(
     _user_id = UUID('ad5953d0-0af7-44bc-8963-6f606f59747d')
 
     if user_id != _user_id:
-        raise HTTPException(HTTPStatus.UNAUTHORIZED, 'Можно изменить только свой голос')
+        raise HTTPException(
+            HTTPStatus.UNAUTHORIZED,
+            'Only owners can update their votes',
+        )
 
     try:
         vote = await service.update_review_vote(review_id=review_id, user_id=user_id, **schema.dict())
     except ResourceDoesNotExist:
-        raise HTTPException(HTTPStatus.NOT_FOUND, 'Нет такого голоса')
+        raise HTTPException(HTTPStatus.NOT_FOUND, 'Vote does not exist')
 
     return ReviewVoteResponse(review_vote=vote)
 
 
-@router.get('/{review_id}/votes/{user_id}', responses={
-    404: {'description': 'Not Found'},
-})
+@router.get(
+    '/{review_id}/votes/{user_id}',
+    responses={404: {'description': 'Not Found', 'model': APIException}},
+)
 async def get_review_vote(
         review_id: UUID,
         user_id: UUID,
@@ -164,10 +181,14 @@ async def get_review_vote(
     return ReviewVoteResponse(review_vote=vote)
 
 
-@router.delete('/{review_id}/votes/{user_id}', status_code=HTTPStatus.NO_CONTENT, responses={
-    403: {'description': 'Unauthorized'},
-    404: {'description': 'Not Found'},
-})
+@router.delete(
+    '/{review_id}/votes/{user_id}',
+    status_code=HTTPStatus.NO_CONTENT,
+    responses={
+        403: {'description': 'Unauthorized', 'model': APIException},
+        404: {'description': 'Not Found', 'model': APIException},
+    },
+)
 async def delete_review_vote(
         review_id: UUID,
         user_id: UUID,
@@ -178,7 +199,10 @@ async def delete_review_vote(
     _user_id = UUID('ad5953d0-0af7-44bc-8963-6f606f59747d')
 
     if user_id != _user_id:
-        raise HTTPException(HTTPStatus.UNAUTHORIZED, 'Можно удалить только свой голос')
+        raise HTTPException(
+            HTTPStatus.UNAUTHORIZED,
+            'Only owners can delete their votes',
+        )
 
     try:
         await service.delete_review_vote(review_id=review_id, user_id=user_id)

@@ -7,8 +7,9 @@ from api.schemas import (
     BookmarkResponse,
     BookmarkListResponse,
     BookmarkCreate,
+    APIException,
 )
-from common.utils import get_page_params
+from api.utils import get_page_params
 from services.bookmarks import get_bookmarks_service, BookmarksService
 from services.exceptions import ResourceDoesNotExist, ResourceAlreadyExists
 
@@ -30,9 +31,7 @@ async def get_bookmark_list(
     return BookmarkListResponse(bookmarks=bookmarks)
 
 
-@router.post('/', responses={
-    409: {'description': 'Conflict'},
-})
+@router.post('/', responses={409: {'description': 'Conflict', 'model': APIException}})
 async def create_bookmark(
         schema: BookmarkCreate,
         # ToDo: _user_id from token
@@ -44,14 +43,15 @@ async def create_bookmark(
     try:
         bookmark = await service.create_bookmark(user_id=_user_id, **schema.dict())
     except ResourceAlreadyExists:
-        raise HTTPException(HTTPStatus.CONFLICT, 'Закладка уже есть такая')
+        raise HTTPException(HTTPStatus.CONFLICT, 'Bookmark already exists')
 
     return BookmarkResponse(bookmark=bookmark)
 
 
-@router.get('/{film_id}/{user_id}', responses={
-    404: {'description': 'Not Found'},
-})
+@router.get(
+    '/{film_id}/{user_id}',
+    responses={404: {'description': 'Not Found', 'model': APIException}},
+)
 async def get_bookmark(
         film_id: UUID,
         user_id: UUID,
@@ -60,15 +60,19 @@ async def get_bookmark(
     try:
         bookmark = await service.get_bookmark(film_id=film_id, user_id=user_id)
     except ResourceDoesNotExist:
-        raise HTTPException(HTTPStatus.NOT_FOUND, 'Такой закладки нету пока')
+        raise HTTPException(HTTPStatus.NOT_FOUND, 'Bookmark does not exist')
 
     return BookmarkResponse(bookmark=bookmark)
 
 
-@router.delete('/{film_id}/{user_id}', status_code=HTTPStatus.NO_CONTENT, responses={
-    403: {'description': 'Unauthorized'},
-    404: {'description': 'Not Found'},
-})
+@router.delete(
+    '/{film_id}/{user_id}',
+    status_code=HTTPStatus.NO_CONTENT,
+    responses={
+        403: {'description': 'Unauthorized', 'model': APIException},
+        404: {'description': 'Not Found', 'model': APIException},
+    },
+)
 async def delete_bookmark(
         film_id: UUID,
         user_id: UUID,
@@ -79,8 +83,12 @@ async def delete_bookmark(
     _user_id = UUID('ad5953d0-0af7-44bc-8963-6f606f59747d')
 
     if user_id != _user_id:
-        raise HTTPException(HTTPStatus.UNAUTHORIZED, 'Можно удалять только свои закладки')
+        raise HTTPException(
+            HTTPStatus.UNAUTHORIZED,
+            'Only owners can delete their bookmarks',
+        )
+
     try:
         await service.delete_bookmark(film_id=film_id, user_id=user_id)
     except ResourceDoesNotExist:
-        raise HTTPException(HTTPStatus.NOT_FOUND, 'Такой закладки нету')
+        raise HTTPException(HTTPStatus.NOT_FOUND, 'Bookmark does not exist')

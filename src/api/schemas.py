@@ -62,3 +62,7 @@ class BookmarkListResponse(BaseModel):
 
 class BookmarkCreate(BaseModel):
     film_id: UUID
+
+
+class APIException(BaseModel):
+    detail: str
