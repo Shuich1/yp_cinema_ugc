@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from api.auth import JWTBearer
 from api.schemas import (
     ReviewResponse,
     ReviewListResponse,
@@ -13,11 +14,9 @@ from api.schemas import (
     APIException,
 )
 from api.utils import get_page_params, get_sorting_params
+from models import User
 from services.exceptions import ResourceDoesNotExist, ResourceAlreadyExists
 from services.reviews import get_reviews_service, ReviewsService
-
-# ToDo: describe exceptions
-
 
 router = APIRouter(prefix='/api/v1/reviews', tags=['reviews'])
 
@@ -45,16 +44,17 @@ async def get_review_list(
     return ReviewListResponse(reviews=reviews)
 
 
-@router.post('/')
+@router.post(
+    '/',
+    responses={401: {'description': 'Unauthorized', 'model': APIException}},
+)
 async def create_review(
         schema: ReviewCreate,
-        # ToDo: user_id from token
+        user: User = Depends(JWTBearer()),
         service: ReviewsService = Depends(get_reviews_service),
 ) -> ReviewResponse:
-    # ToDo: user_id from token
-    user_id = UUID('ad5953d0-0af7-44bc-8963-6f606f59747d')
 
-    review = await service.create_review(user_id=user_id, **schema.dict())
+    review = await service.create_review(user_id=user.id, **schema.dict())
 
     return ReviewResponse(review=review)
 
@@ -79,28 +79,24 @@ async def get_review(
     '/{review_id}',
     status_code=HTTPStatus.NO_CONTENT,
     responses={
-        403: {'description': 'Unauthorized', 'model': APIException},
+        401: {'description': 'Unauthorized', 'model': APIException},
+        403: {'description': 'Forbidden', 'model': APIException},
         404: {'description': 'Not Found', 'model': APIException},
     },
 )
 async def delete_review(
         review_id: UUID,
-        # ToDo: _user_id from token
+        user: User = Depends(JWTBearer()),
         service: ReviewsService = Depends(get_reviews_service),
 ) -> None:
-    # ToDo: _user_id from token
-    _user_id = UUID('ad5953d0-0af7-44bc-8963-6f606f59747d')
-
-    # ToDo: может стоит вынести проверку user_id в API?
-
     try:
         review = await service.get_review(review_id=review_id)
     except ResourceDoesNotExist:
         raise HTTPException(HTTPStatus.NOT_FOUND, 'Review not found')
 
-    if review.user_id != _user_id:
+    if review.user_id != user.id:
         raise HTTPException(
-            HTTPStatus.UNAUTHORIZED,
+            HTTPStatus.FORBIDDEN,
             'Only owners can delete their reviews',
         )
 
@@ -109,21 +105,21 @@ async def delete_review(
 
 @router.post(
     '/{review_id}/votes',
-    responses={409: {'description': 'Conflict', 'model': APIException}},
+    responses={
+        401: {'description': 'Unauthorized', 'model': APIException},
+        409: {'description': 'Conflict', 'model': APIException},
+    },
 )
 async def create_review_vote(
         review_id: UUID,
         schema: ReviewVoteCreate,
-        # ToDo: _user_id from token
+        user: User = Depends(JWTBearer()),
         service: ReviewsService = Depends(get_reviews_service),
 ) -> ReviewVoteResponse:
-    # ToDo: _user_id from token
-    _user_id = UUID('ad5953d0-0af7-44bc-8963-6f606f59747d')
-
     try:
         vote = await service.create_review_vote(
             review_id=review_id,
-            user_id=_user_id,
+            user_id=user.id,
             **schema.dict(),
         )
     except ResourceAlreadyExists:
@@ -135,7 +131,8 @@ async def create_review_vote(
 @router.put(
     '/{review_id}/votes/{user_id}',
     responses={
-        403: {'description': 'Unauthorized', 'model': APIException},
+        401: {'description': 'Unauthorized', 'model': APIException},
+        403: {'description': 'Forbidden', 'model': APIException},
         404: {'description': 'Not Found', 'model': APIException},
     },
 )
@@ -143,15 +140,12 @@ async def update_review_vote(
         review_id: UUID,
         user_id: UUID,
         schema: ReviewVoteUpdate,
-        # ToDo: _user_id from token
+        user: User = Depends(JWTBearer()),
         service: ReviewsService = Depends(get_reviews_service),
 ) -> ReviewVoteResponse:
-    # ToDo: _user_id from token
-    _user_id = UUID('ad5953d0-0af7-44bc-8963-6f606f59747d')
-
-    if user_id != _user_id:
+    if user_id != user.id:
         raise HTTPException(
-            HTTPStatus.UNAUTHORIZED,
+            HTTPStatus.FORBIDDEN,
             'Only owners can update their votes',
         )
 
@@ -185,22 +179,20 @@ async def get_review_vote(
     '/{review_id}/votes/{user_id}',
     status_code=HTTPStatus.NO_CONTENT,
     responses={
-        403: {'description': 'Unauthorized', 'model': APIException},
+        401: {'description': 'Unauthorized', 'model': APIException},
+        403: {'description': 'Forbidden', 'model': APIException},
         404: {'description': 'Not Found', 'model': APIException},
     },
 )
 async def delete_review_vote(
         review_id: UUID,
         user_id: UUID,
-        # ToDo: _user_id from token
+        user: User = Depends(JWTBearer()),
         service: ReviewsService = Depends(get_reviews_service),
 ) -> None:
-    # ToDo: _user_id from token
-    _user_id = UUID('ad5953d0-0af7-44bc-8963-6f606f59747d')
-
-    if user_id != _user_id:
+    if user_id != user.id:
         raise HTTPException(
-            HTTPStatus.UNAUTHORIZED,
+            HTTPStatus.FORBIDDEN,
             'Only owners can delete their votes',
         )
 

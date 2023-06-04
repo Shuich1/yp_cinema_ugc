@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from api.auth import JWTBearer
 from api.schemas import (
     RatingResponse,
     RatingListResponse,
@@ -12,6 +13,7 @@ from api.schemas import (
     APIException,
 )
 from api.utils import get_page_params
+from models import User
 from services.exceptions import ResourceDoesNotExist, ResourceAlreadyExists
 from services.ratings import get_ratings_service, RatingsService
 
@@ -30,17 +32,20 @@ async def get_rating_list(
     return RatingListResponse(ratings=ratings)
 
 
-@router.post('/', responses={409: {'description': 'Conflict', 'model': APIException}})
+@router.post(
+    '/',
+    responses={
+        401: {'description': 'Unauthorized', 'model': APIException},
+        409: {'description': 'Conflict', 'model': APIException},
+    },
+)
 async def create_rating(
         schema: RatingCreate,
-        # ToDo: _user_id from token
+        user: User = Depends(JWTBearer()),
         service: RatingsService = Depends(get_ratings_service),
 ) -> RatingResponse:
-    # ToDo: _user_id from token
-    _user_id = UUID('ad5953d0-0af7-44bc-8963-6f606f59747d')
-
     try:
-        rating = await service.create_rating(user_id=_user_id, **schema.dict())
+        rating = await service.create_rating(user_id=user.id, **schema.dict())
     except ResourceAlreadyExists:
         raise HTTPException(HTTPStatus.CONFLICT, 'Rating already exists')
 
@@ -67,23 +72,21 @@ async def get_rating(
 @router.put(
     '/{film_id}/{user_id}',
     responses={
+        401: {'description': 'Unauthorized', 'model': APIException},
+        403: {'description': 'Forbidden', 'model': APIException},
         404: {'description': 'Not Found', 'model': APIException},
-        403: {'description': 'Unauthorized', 'model': APIException},
     },
 )
 async def update_rating(
         film_id: UUID,
         user_id: UUID,
         schema: RatingUpdate,
-        # ToDo: _user_id from token
+        user: User = Depends(JWTBearer()),
         service: RatingsService = Depends(get_ratings_service),
 ) -> RatingResponse:
-    # ToDo: _user_id from token
-    _user_id = UUID('ad5953d0-0af7-44bc-8963-6f606f59747d')
-
-    if user_id != _user_id:
+    if user_id != user.id:
         raise HTTPException(
-            HTTPStatus.UNAUTHORIZED,
+            HTTPStatus.FORBIDDEN,
             'Only owners can update their ratings',
         )
 
@@ -99,22 +102,20 @@ async def update_rating(
     '/{film_id}/{user_id}',
     status_code=HTTPStatus.NO_CONTENT,
     responses={
+        401: {'description': 'Unauthorized', 'model': APIException},
+        403: {'description': 'Forbidden', 'model': APIException},
         404: {'description': 'Not Found', 'model': APIException},
-        403: {'description': 'Unauthorized', 'model': APIException},
     },
 )
 async def delete_rating(
         film_id: UUID,
         user_id: UUID,
-        # ToDo: _user_id from token
+        user: User = Depends(JWTBearer()),
         service: RatingsService = Depends(get_ratings_service),
 ) -> None:
-    # ToDo: user_id from token
-    _user_id = UUID('ad5953d0-0af7-44bc-8963-6f606f59747d')
-
-    if user_id != _user_id:
+    if user_id != user.id:
         raise HTTPException(
-            HTTPStatus.UNAUTHORIZED,
+            HTTPStatus.FORBIDDEN,
             'Only owners can delete their ratings',
         )
 

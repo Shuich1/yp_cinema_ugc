@@ -5,6 +5,10 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 
+class User(BaseModel):
+    id: UUID
+
+
 class Rating(BaseModel):
     film_id: UUID
     user_id: UUID
