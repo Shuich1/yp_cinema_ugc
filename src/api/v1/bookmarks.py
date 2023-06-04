@@ -1,14 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException, Body
 from http import HTTPStatus
-from models import Bookmark
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
+
+from api.schemas import (
+    BookmarkResponse,
+    BookmarkListResponse,
+    BookmarkCreate,
+)
+from common.utils import get_page_params
 from services.bookmarks import get_bookmarks_service, BookmarksService
 from services.exceptions import ResourceDoesNotExist, ResourceAlreadyExists
-from uuid import UUID
-from common.utils import get_page_params
 
 # ToDo: describe exceptions
 
-router = APIRouter(prefix='/bookmarks', tags=['bookmarks'])
+
+router = APIRouter(prefix='/api/v1/bookmarks', tags=['bookmarks'])
 
 
 @router.get('/')
@@ -16,27 +23,30 @@ async def get_bookmark_list(
         user_id: UUID,
         paginate_by: dict = Depends(get_page_params()),
         service: BookmarksService = Depends(get_bookmarks_service),
-) -> list[Bookmark]:
+) -> BookmarkListResponse:
 
-    return await service.get_bookmark_list(user_id=user_id, **paginate_by)
+    bookmarks = await service.get_bookmark_list(user_id=user_id, **paginate_by)
+
+    return BookmarkListResponse(bookmarks=bookmarks)
 
 
 @router.post('/', responses={
     409: {'description': 'Conflict'},
 })
 async def create_bookmark(
-        # ToDo: define schema
-        film_id: UUID = Body(embed=True),
+        schema: BookmarkCreate,
         # ToDo: _user_id from token
         service: BookmarksService = Depends(get_bookmarks_service),
-) -> Bookmark:
+) -> BookmarkResponse:
     # ToDo: _user_id from token
     _user_id = UUID('ad5953d0-0af7-44bc-8963-6f606f59747d')
 
     try:
-        return await service.create_bookmark(film_id=film_id, user_id=_user_id)
+        bookmark = await service.create_bookmark(user_id=_user_id, **schema.dict())
     except ResourceAlreadyExists:
         raise HTTPException(HTTPStatus.CONFLICT, 'Закладка уже есть такая')
+
+    return BookmarkResponse(bookmark=bookmark)
 
 
 @router.get('/{film_id}/{user_id}', responses={
@@ -46,11 +56,13 @@ async def get_bookmark(
         film_id: UUID,
         user_id: UUID,
         service: BookmarksService = Depends(get_bookmarks_service),
-) -> Bookmark:
+) -> BookmarkResponse:
     try:
-        return await service.get_bookmark(film_id=film_id, user_id=user_id)
+        bookmark = await service.get_bookmark(film_id=film_id, user_id=user_id)
     except ResourceDoesNotExist:
         raise HTTPException(HTTPStatus.NOT_FOUND, 'Такой закладки нету пока')
+
+    return BookmarkResponse(bookmark=bookmark)
 
 
 @router.delete('/{film_id}/{user_id}', status_code=HTTPStatus.NO_CONTENT, responses={

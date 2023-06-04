@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
-class FilmRating(BaseModel):
+class Rating(BaseModel):
     film_id: UUID
     user_id: UUID
     rating: int
@@ -13,7 +13,7 @@ class FilmRating(BaseModel):
     updated: datetime = Field(default_factory=datetime.utcnow)
 
 
-class OverallFilmRating(BaseModel):
+class OverallRating(BaseModel):
     film_id: UUID
     avg_rating: float
     ratings_count: int
