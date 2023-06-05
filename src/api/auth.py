@@ -29,7 +29,11 @@ class JWTBearer(HTTPBearer):
     @staticmethod
     def _decode_token(token: str) -> str:
         try:
-            return jwt.decode(token, settings.jwt_secret_key, algorithms='HS256')
+            return jwt.decode(
+                token,
+                key=settings.jwt_secret_key,
+                algorithms='HS256',
+            )
         except jwt.exceptions.InvalidTokenError as ex:
             raise HTTPException(HTTPStatus.UNAUTHORIZED, ex.args[0])
 

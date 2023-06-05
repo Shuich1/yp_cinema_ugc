@@ -150,7 +150,11 @@ async def update_review_vote(
         )
 
     try:
-        vote = await service.update_review_vote(review_id=review_id, user_id=user_id, **schema.dict())
+        vote = await service.update_review_vote(
+            review_id=review_id,
+            user_id=user_id,
+            **schema.dict(),
+        )
     except ResourceDoesNotExist:
         raise HTTPException(HTTPStatus.NOT_FOUND, 'Vote does not exist')
 
@@ -168,7 +172,10 @@ async def get_review_vote(
 ) -> ReviewVoteResponse:
 
     try:
-        vote = await service.get_review_vote(review_id=review_id, user_id=user_id)
+        vote = await service.get_review_vote(
+            review_id=review_id,
+            user_id=user_id,
+        )
     except ResourceDoesNotExist:
         raise HTTPException(HTTPStatus.NOT_FOUND, 'Vote not found')
 

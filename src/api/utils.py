@@ -13,7 +13,10 @@ def get_page_params(default_limit: int = 10, max_limit: int = 100) -> Callable:
     return page_params
 
 
-def get_sorting_params(fields: list[str], *, default: str | None = None) -> Callable:
+def get_sorting_params(fields: list[str],
+                       *,
+                       default: str | None = None,
+                       ) -> Callable:
     options = tuple(f'{f}:{o}' for f in fields for o in ('asc', 'desc'))
 
     def sorting_params(

@@ -30,14 +30,23 @@ async def get_bookmark_list(
     return BookmarkListResponse(bookmarks=bookmarks)
 
 
-@router.post('/', responses={409: {'description': 'Conflict', 'model': APIException}})
+@router.post(
+    '/',
+    responses={
+        401: {'description': 'Unauthorized', 'model': APIException},
+        409: {'description': 'Conflict', 'model': APIException},
+    },
+)
 async def create_bookmark(
         schema: BookmarkCreate,
         user: User = Depends(JWTBearer()),
         service: BookmarksService = Depends(get_bookmarks_service),
 ) -> BookmarkResponse:
     try:
-        bookmark = await service.create_bookmark(user_id=user.id, **schema.dict())
+        bookmark = await service.create_bookmark(
+            user_id=user.id,
+            **schema.dict(),
+        )
     except ResourceAlreadyExists:
         raise HTTPException(HTTPStatus.CONFLICT, 'Bookmark already exists')
 
@@ -46,10 +55,7 @@ async def create_bookmark(
 
 @router.get(
     '/{film_id}/{user_id}',
-    responses={
-        401: {'description': 'Unauthorized', 'model': APIException},
-        404: {'description': 'Not Found', 'model': APIException},
-    },
+    responses={404: {'description': 'Not Found', 'model': APIException}},
 )
 async def get_bookmark(
         film_id: UUID,

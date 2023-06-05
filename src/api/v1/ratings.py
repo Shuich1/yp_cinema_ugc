@@ -27,7 +27,11 @@ async def get_rating_list(
         paginate_by: dict = Depends(get_page_params()),
         service: RatingsService = Depends(get_ratings_service),
 ) -> RatingListResponse:
-    ratings = await service.get_rating_list(film_id=film_id, user_id=user_id, **paginate_by)
+    ratings = await service.get_rating_list(
+        film_id=film_id,
+        user_id=user_id,
+        **paginate_by,
+    )
 
     return RatingListResponse(ratings=ratings)
 
@@ -91,7 +95,11 @@ async def update_rating(
         )
 
     try:
-        rating = await service.update_rating(film_id=film_id, user_id=user_id, **schema.dict())
+        rating = await service.update_rating(
+            film_id=film_id,
+            user_id=user_id,
+            **schema.dict(),
+        )
     except ResourceDoesNotExist:
         raise HTTPException(HTTPStatus.NOT_FOUND, 'Rating does not exist')
 
