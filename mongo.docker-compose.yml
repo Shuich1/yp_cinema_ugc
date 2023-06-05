@@ -1,0 +1,131 @@
+version: "3.9"
+
+services:
+  
+  # Shard 1 replica set
+  mongo_s1_n1:
+    container_name: mongo_s1_n1
+    image: mongo:6.0.6-jammy
+    command: mongod -f /etc/mongodb/config/rs_s1.yml
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo_cluster/config:/etc/mongodb/config
+      - ./mongo_cluster/initdb:/opt/initdb
+      - mongo_data_s1_n1:/data/db
+
+  mongo_s1_n2:
+    container_name: mongo_s1_n2
+    image: mongo:6.0.6-jammy
+    command: mongod -f /etc/mongodb/config/rs_s1.yml
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo_cluster/config:/etc/mongodb/config
+      - mongo_data_s1_n2:/data/db
+
+  mongo_s1_n3:
+    container_name: mongo_s1_n3
+    image: mongo:6.0.6-jammy
+    command: mongod -f /etc/mongodb/config/rs_s1.yml
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo_cluster/config:/etc/mongodb/config
+      - mongo_data_s1_n3:/data/db
+
+  # Shard 2 replica set
+  mongo_s2_n1:
+    container_name: mongo_s2_n1
+    image: mongo:6.0.6-jammy
+    command: mongod -f /etc/mongodb/config/rs_s2.yml
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo_cluster/config:/etc/mongodb/config
+      - ./mongo_cluster/initdb:/opt/initdb
+      - mongo_data_s2_n1:/data/db
+
+  mongo_s2_n2:
+    container_name: mongo_s2_n2
+    image: mongo:6.0.6-jammy
+    command: mongod -f /etc/mongodb/config/rs_s2.yml
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo_cluster/config:/etc/mongodb/config
+      - mongo_data_s2_n2:/data/db
+
+  mongo_s2_n3:
+    container_name: mongo_s2_n3
+    image: mongo:6.0.6-jammy
+    command: mongod -f /etc/mongodb/config/rs_s2.yml
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo_cluster/config:/etc/mongodb/config
+      - mongo_data_s2_n3:/data/db
+
+  # Config server replica set
+  mongo_cfg_n1:
+    container_name: mongo_cfg_n1
+    image: mongo:6.0.6-jammy
+    command: mongod -f /etc/mongodb/config/rs_cfg.yml
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo_cluster/config:/etc/mongodb/config
+      - ./mongo_cluster/initdb:/opt/initdb
+      - mongo_data_cfg_n1:/data/db
+
+  mongo_cfg_n2:
+    container_name: mongo_cfg_n2
+    image: mongo:6.0.6-jammy
+    command: mongod -f /etc/mongodb/config/rs_cfg.yml
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo_cluster/config:/etc/mongodb/config
+      - mongo_data_cfg_n2:/data/db
+
+  mongo_cfg_n3:
+    container_name: mongo_cfg_n3
+    image: mongo:6.0.6-jammy
+    command: mongod -f /etc/mongodb/config/rs_cfg.yml
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo_cluster/config:/etc/mongodb/config
+      - mongo_data_cfg_n3:/data/db
+
+  # Routers
+  mongo_r1:
+    container_name: mongo_r1
+    image: mongo:6.0.6-jammy
+    depends_on:
+      - mongo_cfg_n1
+      - mongo_cfg_n2
+      - mongo_cfg_n3
+    command: mongos -f /etc/mongodb/config/sc.yml
+    ports:
+      - "27018:27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo_cluster/config:/etc/mongodb/config
+      - ./mongo_cluster/initdb:/opt/initdb
+
+  mongo_r2:
+    container_name: mongo_r2
+    image: mongo:6.0.6-jammy
+    depends_on:
+      - mongo_cfg_n1
+      - mongo_cfg_n2
+      - mongo_cfg_n3
+    command: mongos -f /etc/mongodb/config/sc.yml
+    ports:
+      - "27019:27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo_cluster/config:/etc/mongodb/config
+
+volumes:
+  mongo_data_s1_n1:
+  mongo_data_s1_n2:
+  mongo_data_s1_n3:
+  mongo_data_s2_n1:
+  mongo_data_s2_n2:
+  mongo_data_s2_n3:
+  mongo_data_cfg_n1:
+  mongo_data_cfg_n2:
+  mongo_data_cfg_n3:

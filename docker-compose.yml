@@ -268,13 +268,6 @@ services:
       clickhouse-zookeeper:
         condition: service_healthy
 
-  mongo:
-    image: mongo:6.0.6-jammy
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-
 volumes:
   database:
   auth_postgres_data:
@@ -285,4 +278,3 @@ volumes:
   jaeger_data:
   migrations:
   ch_config:
-  mongo_data:
