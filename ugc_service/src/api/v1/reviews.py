@@ -18,7 +18,7 @@ from models import User
 from services.exceptions import ResourceDoesNotExist, ResourceAlreadyExists
 from services.reviews import get_reviews_service, ReviewsService
 
-router = APIRouter(prefix='/api/v1/reviews', tags=['reviews'])
+router = APIRouter()
 
 
 @router.get('/')

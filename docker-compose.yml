@@ -150,6 +150,8 @@ services:
       dockerfile: Dockerfile
     env_file:
       - environments/ugc_service
+    environment:
+      - AUTHJWT_SECRET_KEY=${JWT_SECRET_KEY}
     depends_on:
       kafka:
         condition: service_healthy

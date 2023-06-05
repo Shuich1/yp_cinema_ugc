@@ -1,9 +1,10 @@
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from models import Rating, OverallRating, Review, ReviewVote, Bookmark
+from models.base import BaseModel
 
 
 class RatingResponse(BaseModel):

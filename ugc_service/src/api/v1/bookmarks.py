@@ -15,7 +15,7 @@ from models import User
 from services.bookmarks import get_bookmarks_service, BookmarksService
 from services.exceptions import ResourceDoesNotExist, ResourceAlreadyExists
 
-router = APIRouter(prefix='/api/v1/bookmarks', tags=['bookmarks'])
+router = APIRouter()
 
 
 @router.get('/')
