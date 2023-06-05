@@ -198,6 +198,7 @@ class User(db.Model):
         db.session.add(auth_history)
         db.session.commit()
         return {
+            'id': self.id,
             'access_token': access_token,
             'refresh_token': refresh_token,
         }

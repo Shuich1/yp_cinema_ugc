@@ -4,4 +4,5 @@ uvicorn==0.22.0
 aiokafka==0.8.0
 backoff==2.2.1
 asynch==0.2.2
-fastapi-jwt-auth[asymmetric]==0.5.0
+gunicorn==20.1.0
+async_fastapi_jwt_auth==0.5.1

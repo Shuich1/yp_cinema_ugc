@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from models.users_films import UserFilmTimestamp
 from pydantic import BaseModel
 from services.users_films import UserFilmService, get_userfilm_service
-from fastapi_jwt_auth import AuthJWT
+from async_fastapi_jwt_auth import AuthJWT
 
 from logging import getLogger
 logger = getLogger(__name__)
@@ -40,8 +40,8 @@ async def create_user_film_timestamp(
         ugc_service: UserFilmService = Depends(get_userfilm_service),
         Authorize: AuthJWT = Depends()
 ):
-    Authorize.jwt_required()
-    current_user = Authorize.get_jwt_subject()
+    await Authorize.jwt_required()
+    current_user = await Authorize.get_jwt_subject()
     if current_user != str(user_film_data.user_id):
         return HTTPException(
             status_code=HTTPStatus.FORBIDDEN, detail="user_id в токене не соответсвует user_id в timestamp"
@@ -68,9 +68,10 @@ async def get_last_user_film_timestamp(
         ugc_service: UserFilmService = Depends(get_userfilm_service),
         Authorize: AuthJWT = Depends()
 ):
-    Authorize.jwt_required()
-    current_user = Authorize.get_jwt_subject()
-    user_roles = Authorize.get_raw_jwt()['roles']
+    await Authorize.jwt_required()
+    current_user = await Authorize.get_jwt_subject()
+    raw_jwt = await Authorize.get_raw_jwt()
+    user_roles = raw_jwt['roles']
     if current_user != str(user_id) and 'admin' not in user_roles:
         logger.warning(f"{current_user=}")
         return HTTPException(

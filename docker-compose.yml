@@ -148,15 +148,11 @@ services:
     build:
       context: ./ugc_service
       dockerfile: Dockerfile
-    volumes:
-      - ./ugc_service:/ugc_service
     env_file:
       - environments/ugc_service
     depends_on:
       kafka:
         condition: service_healthy
-    ports:
-      - 18000:8000
 
   ugc_etl_kafka_click:
     container_name: ugc_etl_kafka_click

@@ -32,7 +32,7 @@ class ClickhouseLoader:
 
     @backoff.on_exception(backoff.expo,
                           (errors.NetworkError, ConnectionRefusedError),
-                          max_time=settings.BACKOFF_MAX_TIME)
+                          max_time=settings.backoff_max_time)
     def load(self, transformed_data: ClickhouseBulkData) -> None:
         logger.info('Loading data %s rows', transformed_data.count)
         self.client.execute(transformed_data.query)

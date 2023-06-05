@@ -1,5 +1,5 @@
 import os
-from pydantic import BaseSettings, Field
+from pydantic import BaseSettings
 from logging import getLogger, basicConfig
 
 # Корень проекта
@@ -8,13 +8,13 @@ ENV_FILE_PATH = os.path.join(BASE_DIR, 'core', '.env')
 
 
 class Settings(BaseSettings):
-    KAFKA_TOPIC: str = Field(..., env='KAFKA_TOPIC')
-    KAFKA_SERVER: str = Field(..., env='KAFKA_SERVER')
-    KAFKA_GROUPID: str = Field(..., env='KAFKA_GROUPID')
-    CLICKHOUSE_HOST: str = Field(..., env='CLICKHOUSE_HOST')
-    CLICKHOUSE_TABLENAME: str = Field(..., env='CLICKHOUSE_TABLENAME')
-    BACKOFF_MAX_TIME: float = Field(..., env='BACKOFF_MAX_TIME')
-    SLEEP_INTERVAL: int = Field(..., env='SLEEP_INTERVAL')
+    kafka_topic: str
+    kafka_server: str
+    kafka_groupid: str
+    clickhouse_host: str
+    clickhouse_tablename: str
+    backoff_max_time: float
+    sleep_interval: int
 
     class Config:
         env_file = ENV_FILE_PATH

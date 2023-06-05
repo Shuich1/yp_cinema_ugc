@@ -17,11 +17,10 @@ class UserFilmService:
         return await self.oltp.write(
             key=f'{user_film_data.user_id}+{user_film_data.film_id}',
             data=user_film_data.json(),
-            topic=settings.KAFKA_VIEW_TOPIC
+            topic=settings.kafka_view_topic
         )
 
     async def get_last_timestamp(self, user_id: UUID, film_id: UUID):
-        print(f"{user_id=} | {film_id=}")
         timestamp = await self.olap.get_last_user_film_timestamp(user_id, film_id)
         return timestamp
 

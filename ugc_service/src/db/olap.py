@@ -22,14 +22,14 @@ class ClickHouseOlap(GenericOlap):
         self.port = port
         self._connect = None
 
-    @backoff.on_exception(backoff.expo, Exception, max_time=settings.BACKOFF_MAX_TIME)
+    @backoff.on_exception(backoff.expo, Exception, max_time=settings.backoff_max_time)
     async def connect(self) -> None:
         self._connect = await connect(
             host=self.host,
             port=self.port,
         )
 
-    @backoff.on_exception(backoff.expo, Exception, max_time=settings.BACKOFF_MAX_TIME)
+    @backoff.on_exception(backoff.expo, Exception, max_time=settings.backoff_max_time)
     async def get_last_user_film_timestamp(self, user_id: UUID, film_id: UUID) -> UserFilmTimestamp | None:
         async with self._connect.cursor(cursor=DictCursor) as cursor:
             count = await cursor.execute("""
