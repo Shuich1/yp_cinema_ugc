@@ -10,23 +10,23 @@ ENV_FILE_PATH = os.path.join(BASE_DIR, 'core', '.env')
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str
-    PROJECT_DESCRIPTION: str
-    BACKOFF_MAX_TIME: int
+    project_name: str
+    project_description: str
+    backoff_max_time: int
 
     # Настройки Uvicorn
-    UVICORN_APP_NAME: str
-    UVICORN_HOST: str
-    UVICORN_PORT: int
+    uvicorn_app_name: str
+    uvicorn_host: str
+    uvicorn_port: int
 
     # Настройки Kafka
-    KAFKA_HOST: str
-    KAFKA_PORT: int
-    KAFKA_VIEW_TOPIC: str
+    kafka_host: str
+    kafka_port: int
+    kafka_view_topic: str
 
     # Настройки ClickHouse
-    CLICKHOUSE_HOST: str
-    CLICKHOSE_PORT: str
+    clickhouse_host: str
+    clickhouse_port: str
 
     # Auth
     authjwt_secret_key: str

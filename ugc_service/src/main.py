@@ -1,5 +1,5 @@
 import logging
-
+from contextlib import asynccontextmanager
 import uvicorn
 from api.v1 import users_films
 from core.config import settings
@@ -7,16 +7,31 @@ from core.logger import LOGGING
 from db import olap, oltp
 from fastapi import FastAPI, Request
 from fastapi.responses import ORJSONResponse
-from fastapi_jwt_auth import AuthJWT
-from fastapi_jwt_auth.exceptions import AuthJWTException
+from async_fastapi_jwt_auth import AuthJWT
+from async_fastapi_jwt_auth.exceptions import AuthJWTException
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    olap.olap_bd = olap.ClickHouseOlap(
+        settings.clickhouse_host, settings.clickhouse_port
+    )
+    oltp.oltp_bd = oltp.KafkaOltp(
+        f'{settings.kafka_host}:{settings.kafka_port}'
+    )
+    await oltp.oltp_bd.connect()
+    await olap.olap_bd.connect()
+    yield
+    await oltp.oltp_bd.disconnect()
 
 
 app = FastAPI(
-    title=settings.PROJECT_NAME,
-    description=settings.PROJECT_DESCRIPTION,
-    docs_url='/api/openapi',
-    openapi_url='/api/openapi.json',
+    title=settings.project_name,
+    description=settings.project_description,
+    docs_url='/ugc/api/v1/openapi',
+    openapi_url='/ugc/api/v1/openapi.json',
     default_response_class=ORJSONResponse,
+    lifespan=lifespan
 )
 
 
@@ -33,22 +48,6 @@ def authjwt_exception_handler(request: Request, exc: AuthJWTException):
     )
 
 
-@app.on_event('startup')
-async def startup():
-    olap.olap_bd = olap.ClickHouseOlap(
-        settings.CLICKHOUSE_HOST, settings.CLICKHOSE_PORT
-    )
-    oltp.oltp_bd = oltp.KafkaOltp(
-        f'{settings.KAFKA_HOST}:{settings.KAFKA_PORT}'
-    )
-    await oltp.oltp_bd.connect()
-    await olap.olap_bd.connect()
-
-
-@app.on_event('shutdown')
-async def shutdown():
-    await oltp.oltp_bd.disconnect()
-
 app.include_router(
     users_films.router,
     prefix='/ugc/api/v1/users_films',
@@ -58,9 +57,9 @@ app.include_router(
 
 if __name__ == '__main__':
     uvicorn.run(
-        app=settings.UVICORN_APP_NAME,
-        host=settings.UVICORN_HOST,
-        port=settings.UVICORN_PORT,
+        app=settings.uvicorn_app_name,
+        host=settings.uvicorn_host,
+        port=settings.uvicorn_port,
         log_config=LOGGING,
         log_level=logging.DEBUG,
         reload=True

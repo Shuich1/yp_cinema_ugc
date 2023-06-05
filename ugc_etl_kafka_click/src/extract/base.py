@@ -2,7 +2,6 @@ from logging import getLogger
 from typing import Generator
 from kafka import KafkaConsumer, errors
 from .schema import KafkaData, KafkaBulkData
-from functools import cached_property
 from core.config import settings
 import orjson
 import backoff
@@ -31,7 +30,7 @@ class KafkaExtractor:
     @property
     @backoff.on_exception(backoff.expo,
                           (errors.NoBrokersAvailable, ConnectionRefusedError),
-                          max_time=settings.BACKOFF_MAX_TIME)
+                          max_time=settings.backoff_max_time)
     def consumer(self) -> KafkaConsumer:
         if not self._consumer:
             self._consumer = KafkaConsumer(
@@ -47,7 +46,7 @@ class KafkaExtractor:
 
     @backoff.on_exception(backoff.expo,
                           (errors.NoBrokersAvailable, ConnectionRefusedError),
-                          max_time=settings.BACKOFF_MAX_TIME)
+                          max_time=settings.backoff_max_time)
     def get_updates(self) -> Generator[KafkaBulkData | None, None, None]:
         while True:
             result = KafkaBulkData(payload=[])

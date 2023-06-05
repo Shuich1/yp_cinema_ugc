@@ -29,7 +29,7 @@ class RefreshTokenScheme(Schema):
     refresh_token = fields.Str(required=True)
 
 
-class AccessRefreshTokenScheme(AccessTokenScheme, RefreshTokenScheme):
+class AccessRefreshTokenScheme(IDScheme, AccessTokenScheme, RefreshTokenScheme):
     pass
 
 
