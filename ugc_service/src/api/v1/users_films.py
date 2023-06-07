@@ -43,6 +43,7 @@ async def create_user_film_timestamp(
     await Authorize.jwt_required()
     current_user = await Authorize.get_jwt_subject()
     if current_user != str(user_film_data.user_id):
+        logger.error('user_id в токене не соответсвует user_id в timestamp')
         return HTTPException(
             status_code=HTTPStatus.FORBIDDEN, detail="user_id в токене не соответсвует user_id в timestamp"
         )

@@ -1,5 +1,6 @@
 import os
 from logging import config as logging_config
+from contextvars import ContextVar
 
 from core.logger import LOGGING
 from pydantic import BaseSettings

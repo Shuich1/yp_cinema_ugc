@@ -9,6 +9,8 @@ from fastapi import FastAPI, Request
 from fastapi.responses import ORJSONResponse
 from async_fastapi_jwt_auth import AuthJWT
 from async_fastapi_jwt_auth.exceptions import AuthJWTException
+from core.middleware import RequestContextMiddleware
+
 
 
 @asynccontextmanager
@@ -47,6 +49,8 @@ def authjwt_exception_handler(request: Request, exc: AuthJWTException):
         content={"detail": exc.message}
     )
 
+
+app.add_middleware(RequestContextMiddleware)
 
 app.include_router(
     users_films.router,
