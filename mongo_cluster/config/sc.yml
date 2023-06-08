@@ -1,0 +1,5 @@
+net:
+  port: 27017
+  bindIpAll: true
+sharding:
+  configDB: rs_cfg/mongo_cfg_n1:27017,mongo_cfg_n2:27017,mongo_cfg_n3:27017

@@ -1,15 +1,19 @@
 from logging import getLogger
 from contextlib import asynccontextmanager
+
 import uvicorn
-from api.v1 import users_films
-from core.config import settings
-# from core.logger import LOGGING
-from db import olap, oltp
-from fastapi import FastAPI, Request
-from fastapi.responses import ORJSONResponse
+
 from async_fastapi_jwt_auth import AuthJWT
 from async_fastapi_jwt_auth.exceptions import AuthJWTException
+from fastapi import FastAPI, Request
+from fastapi.responses import ORJSONResponse
+from motor.motor_asyncio import AsyncIOMotorClient
+from api.v1 import users_films, ratings, reviews, bookmarks
+from core.config import settings
+from core.logger import LOGGING
 from core.middleware import RequestContextMiddleware
+from db import olap, oltp, mongo
+
 
 logger = getLogger(__name__)
 
@@ -24,8 +28,13 @@ async def lifespan(app: FastAPI):
     )
     await oltp.oltp_bd.connect()
     await olap.olap_bd.connect()
+    mongo.client = AsyncIOMotorClient(
+        settings.mongodb_uri,
+        uuidRepresentation='standard',
+    )
     yield
     await oltp.oltp_bd.disconnect()
+    mongo.client.close()
 
 
 app = FastAPI(
@@ -58,6 +67,22 @@ app.include_router(
     users_films.router,
     prefix='/ugc/api/v1/users_films',
     tags=['users_films']
+)
+
+app.include_router(
+    ratings.router,
+    prefix='/ugc/api/v1/ratings',
+    tags=['ratings'],
+)
+app.include_router(
+    reviews.router,
+    prefix='/ugc/api/v1/reviews',
+    tags=['reviews'],
+)
+app.include_router(
+    bookmarks.router,
+    prefix='/ugc/api/v1/bookmarks',
+    tags=['bookmarks'],
 )
 
 

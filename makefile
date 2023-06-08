@@ -8,9 +8,9 @@ all:
 	@echo "make auth_tests - Запуск тестов сервиса авторизации."
 	@echo "make research_db - Запуск исследования СУБД"
 start:
-	docker-compose up -d --build
+	docker-compose -f docker-compose.yml -f mongo.docker-compose.yml up -d --build
 stop:
-	docker-compose down
+	docker-compose -f docker-compose.yml -f mongo.docker-compose.yml down
 createsuperuser:
 	docker-compose exec django python manage.py createsuperuser
 async_tests:
@@ -24,3 +24,10 @@ research_db:
 	&& docker-compose up -d --build \
 	&& docker logs -f test_stand \
 	&& docker-compose down -v
+init_mongo_cluster:
+	docker exec mongo_cfg_n1 sh -c "mongosh < /opt/initdb/rs_cfg.js" \
+	&& docker exec mongo_s1_n1 sh -c "mongosh < /opt/initdb/rs_s1.js" \
+	&& docker exec mongo_s2_n1 sh -c "mongosh < /opt/initdb/rs_s2.js" \
+	&& sleep 30 \
+	&& docker exec mongo_r1 sh -c "mongosh < /opt/initdb/sc.js" \
+	&& docker exec mongo_r1 sh -c "mongosh < /opt/initdb/sh.js"
