@@ -1,8 +1,10 @@
+aiokafka==0.8.0
+async_fastapi_jwt_auth==0.5.1
+asynch==0.2.2
+backoff==2.2.1
 fastapi==0.95.1
+gunicorn==20.1.0
+motor==3.1.2
+pydantic==1.10.8
 orjson==3.8.12
 uvicorn==0.22.0
-aiokafka==0.8.0
-backoff==2.2.1
-asynch==0.2.2
-gunicorn==20.1.0
-async_fastapi_jwt_auth==0.5.1
