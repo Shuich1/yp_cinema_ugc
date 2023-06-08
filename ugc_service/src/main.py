@@ -1,9 +1,9 @@
-import logging
+from logging import getLogger
 from contextlib import asynccontextmanager
 import uvicorn
 from api.v1 import users_films
 from core.config import settings
-from core.logger import LOGGING
+# from core.logger import LOGGING
 from db import olap, oltp
 from fastapi import FastAPI, Request
 from fastapi.responses import ORJSONResponse
@@ -11,6 +11,7 @@ from async_fastapi_jwt_auth import AuthJWT
 from async_fastapi_jwt_auth.exceptions import AuthJWTException
 from core.middleware import RequestContextMiddleware
 
+logger = getLogger(__name__)
 
 
 @asynccontextmanager
@@ -44,6 +45,7 @@ def get_config():
 
 @app.exception_handler(AuthJWTException)
 def authjwt_exception_handler(request: Request, exc: AuthJWTException):
+    logger.error("JWT error: %s", exc.message)
     return ORJSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.message}
@@ -64,7 +66,7 @@ if __name__ == '__main__':
         app=settings.uvicorn_app_name,
         host=settings.uvicorn_host,
         port=settings.uvicorn_port,
-        log_config=LOGGING,
-        log_level=logging.DEBUG,
+        # log_config=LOGGING,
+        # log_level=logging.DEBUG,
         reload=True
     )
