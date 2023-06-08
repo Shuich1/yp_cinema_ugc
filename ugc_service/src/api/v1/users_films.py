@@ -50,6 +50,7 @@ async def create_user_film_timestamp(
     try:
         await ugc_service.create_user_film_timestamp(user_film_data)
     except BaseException as exception:
+        logger.error(exception.__str__())
         return HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=exception.__str__())
 
     return BaseResponse(detail='ok')
@@ -74,13 +75,14 @@ async def get_last_user_film_timestamp(
     raw_jwt = await Authorize.get_raw_jwt()
     user_roles = raw_jwt['roles']
     if current_user != str(user_id) and 'admin' not in user_roles:
-        logger.warning(f"{current_user=}")
+        logger.error("Попытка получить timestump не принадлежащие пользователю")
         return HTTPException(
-            status_code=HTTPStatus.FORBIDDEN, detail="FORBIDDEN"
+            status_code=HTTPStatus.FORBIDDEN, detail="Попытка получить timestump не принадлежащие пользователю"
         )
     try:
         timestamp = await ugc_service.get_last_timestamp(user_id, film_id)
     except BaseException as exception:
+        logger.error(exception.__str__())
         return HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=exception.__str__())
     if not timestamp:
         return

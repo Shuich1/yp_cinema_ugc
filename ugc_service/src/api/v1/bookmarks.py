@@ -14,6 +14,10 @@ from api.utils import get_page_params
 from models import User
 from services.bookmarks import get_bookmarks_service, BookmarksService
 from services.exceptions import ResourceDoesNotExist, ResourceAlreadyExists
+from logging import getLogger
+
+
+logger = getLogger(__name__)
 
 router = APIRouter()
 
@@ -48,6 +52,7 @@ async def create_bookmark(
             **schema.dict(),
         )
     except ResourceAlreadyExists:
+        logger.error('Bookmark already exists')
         raise HTTPException(HTTPStatus.CONFLICT, 'Bookmark already exists')
 
     return BookmarkResponse(bookmark=bookmark)
@@ -65,6 +70,7 @@ async def get_bookmark(
     try:
         bookmark = await service.get_bookmark(film_id=film_id, user_id=user_id)
     except ResourceDoesNotExist:
+        logger.error('Bookmark does not exist film_id=%s, user_id=%s', film_id, user_id)
         raise HTTPException(HTTPStatus.NOT_FOUND, 'Bookmark does not exist')
 
     return BookmarkResponse(bookmark=bookmark)
@@ -86,6 +92,7 @@ async def delete_bookmark(
         service: BookmarksService = Depends(get_bookmarks_service),
 ) -> None:
     if user_id != user.id:
+        logger.error('Only owners can delete their bookmarks user_id=%s, user.id=%s', user_id, user.id)
         raise HTTPException(
             HTTPStatus.FORBIDDEN,
             'Only owners can delete their bookmarks',
@@ -94,4 +101,5 @@ async def delete_bookmark(
     try:
         await service.delete_bookmark(film_id=film_id, user_id=user_id)
     except ResourceDoesNotExist:
+        logger.error('Bookmark does not exist film_id=%s, user_id=%s', film_id, user_id)
         raise HTTPException(HTTPStatus.NOT_FOUND, 'Bookmark does not exist')

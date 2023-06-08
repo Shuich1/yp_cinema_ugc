@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     # MongoDB settings
     mongodb_uri: str
 
+    # Sentry
+    sentry_dsn: str
+
     class Config:
         env_file = ENV_FILE_PATH
 

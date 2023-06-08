@@ -2,6 +2,7 @@ from logging import getLogger
 from contextlib import asynccontextmanager
 
 import uvicorn
+import sentry_sdk
 
 from async_fastapi_jwt_auth import AuthJWT
 from async_fastapi_jwt_auth.exceptions import AuthJWTException
@@ -10,12 +11,16 @@ from fastapi.responses import ORJSONResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 from api.v1 import users_films, ratings, reviews, bookmarks
 from core.config import settings
-from core.logger import LOGGING
 from core.middleware import RequestContextMiddleware
 from db import olap, oltp, mongo
 
 
 logger = getLogger(__name__)
+
+sentry_sdk.init(
+    dsn=settings.sentry_dsn,
+    traces_sample_rate=1.0,
+)
 
 
 @asynccontextmanager
@@ -91,7 +96,5 @@ if __name__ == '__main__':
         app=settings.uvicorn_app_name,
         host=settings.uvicorn_host,
         port=settings.uvicorn_port,
-        # log_config=LOGGING,
-        # log_level=logging.DEBUG,
         reload=True
     )
