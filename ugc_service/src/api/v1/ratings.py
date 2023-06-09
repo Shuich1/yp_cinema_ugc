@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from api.auth import JWTBearer
