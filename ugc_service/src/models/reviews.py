@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal
+from typing_extensions import Literal
 from uuid import UUID, uuid4
 
 from models.base import BaseModel

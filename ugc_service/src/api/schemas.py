@@ -1,4 +1,5 @@
-from typing import List, Literal
+from typing import List
+from typing_extensions import Literal
 from uuid import UUID
 
 from models import Bookmark, OverallRating, Rating, Review, ReviewVote

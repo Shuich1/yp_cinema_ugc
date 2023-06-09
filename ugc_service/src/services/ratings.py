@@ -133,7 +133,7 @@ class MongoDBRatingsService(RatingsService):
         ]
         result = self._ratings.aggregate(pipeline)
         try:
-            rating_stats = await anext(result)
+            rating_stats = await result.__anext__()
         except StopAsyncIteration:
             raise ResourceDoesNotExist()
         return OverallRating(film_id=film_id, **rating_stats)

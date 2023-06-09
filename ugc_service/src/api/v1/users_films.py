@@ -83,7 +83,7 @@ async def get_last_user_film_timestamp(
     raw_jwt = await Authorize.get_raw_jwt()
     user_roles = raw_jwt['roles']
     if current_user != str(user_id) and 'admin' not in user_roles:
-        logger.warning(f"{current_user=}")
+        logger.warning("current_user=%s", current_user)
         return HTTPException(
             status_code=HTTPStatus.FORBIDDEN, detail="FORBIDDEN"
         )

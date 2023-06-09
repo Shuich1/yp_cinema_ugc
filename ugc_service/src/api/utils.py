@@ -1,4 +1,5 @@
-from typing import Callable, Dict, List, Literal, Optional
+from typing import Callable, Dict, List, Optional
+from typing_extensions import Literal
 
 from fastapi import Query
 
