@@ -1,19 +1,14 @@
 from http import HTTPStatus
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
-
 from api.auth import JWTBearer
-from api.schemas import (
-    BookmarkResponse,
-    BookmarkListResponse,
-    BookmarkCreate,
-    APIException,
-)
+from api.schemas import (APIException, BookmarkCreate, BookmarkListResponse,
+                         BookmarkResponse)
 from api.utils import get_page_params
+from fastapi import APIRouter, Depends, HTTPException
 from models import User
-from services.bookmarks import get_bookmarks_service, BookmarksService
-from services.exceptions import ResourceDoesNotExist, ResourceAlreadyExists
+from services.bookmarks import BookmarksService, get_bookmarks_service
+from services.exceptions import ResourceAlreadyExists, ResourceDoesNotExist
 
 router = APIRouter()
 

@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
-from core.config import settings
 from typing import Optional
+from uuid import UUID
+
+import backoff
 from asynch import connect
 from asynch.cursors import DictCursor
+from core.config import settings
 from models.users_films import UserFilmTimestamp
-from uuid import UUID
-import backoff
 
 
 class GenericOlap(ABC):

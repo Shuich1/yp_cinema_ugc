@@ -1,11 +1,11 @@
 from functools import lru_cache
+from uuid import UUID
 
 from core.config import settings
 from db.olap import GenericOlap, get_olap
 from db.oltp import GenericOltp, get_oltp
 from fastapi import Depends
 from models.users_films import UserFilmTimestamp
-from uuid import UUID
 
 
 class UserFilmService:

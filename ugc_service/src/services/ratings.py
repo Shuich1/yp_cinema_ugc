@@ -1,22 +1,22 @@
 from abc import ABC, abstractmethod
+from typing import List, Optional
 from uuid import UUID
 
+from db import mongo
+from models import OverallRating, Rating
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import ReturnDocument
-
-from db import mongo
-from models import Rating, OverallRating
 from services.exceptions import ResourceAlreadyExists, ResourceDoesNotExist
 
 
 class RatingsService(ABC):
     @abstractmethod
     async def get_rating_list(self,
-                              film_id: UUID | None,
-                              user_id: UUID | None,
+                              film_id: Optional[UUID],
+                              user_id: Optional[UUID],
                               offset: int,
                               limit: int,
-                              ) -> list[Rating]:
+                              ) -> List[Rating]:
         ...
 
     @abstractmethod
@@ -53,11 +53,11 @@ class MongoDBRatingsService(RatingsService):
         self._ratings = mongo_client.films.ratings
 
     async def get_rating_list(self,
-                              film_id: UUID | None,
-                              user_id: UUID | None,
+                              film_id: Optional[UUID],
+                              user_id: Optional[UUID],
                               offset: int,
                               limit: int,
-                              ) -> list[Rating]:
+                              ) -> List[Rating]:
         pipeline = [
             {'$sort': {'updated': -1}},
             {'$skip': offset},

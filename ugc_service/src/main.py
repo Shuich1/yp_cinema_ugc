@@ -2,16 +2,15 @@ import logging
 from contextlib import asynccontextmanager
 
 import uvicorn
+from api.v1 import bookmarks, ratings, reviews, users_films
 from async_fastapi_jwt_auth import AuthJWT
 from async_fastapi_jwt_auth.exceptions import AuthJWTException
+from core.config import settings
+from core.logger import LOGGING
+from db import mongo, olap, oltp
 from fastapi import FastAPI, Request
 from fastapi.responses import ORJSONResponse
 from motor.motor_asyncio import AsyncIOMotorClient
-
-from api.v1 import users_films, ratings, reviews, bookmarks
-from core.config import settings
-from core.logger import LOGGING
-from db import olap, oltp, mongo
 
 
 @asynccontextmanager

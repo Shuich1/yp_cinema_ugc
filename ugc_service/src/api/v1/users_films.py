@@ -1,13 +1,13 @@
 from http import HTTPStatus
+from logging import getLogger
 from uuid import UUID
 
+from async_fastapi_jwt_auth import AuthJWT
 from fastapi import APIRouter, Depends, HTTPException
 from models.users_films import UserFilmTimestamp
 from pydantic import BaseModel
 from services.users_films import UserFilmService, get_userfilm_service
-from async_fastapi_jwt_auth import AuthJWT
 
-from logging import getLogger
 logger = getLogger(__name__)
 
 

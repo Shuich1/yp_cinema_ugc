@@ -1,29 +1,23 @@
 from http import HTTPStatus
+from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-
 from api.auth import JWTBearer
-from api.schemas import (
-    RatingResponse,
-    RatingListResponse,
-    RatingCreate,
-    RatingUpdate,
-    OverallRatingResponse,
-    APIException,
-)
+from api.schemas import (APIException, OverallRatingResponse, RatingCreate,
+                         RatingListResponse, RatingResponse, RatingUpdate)
 from api.utils import get_page_params
+from fastapi import APIRouter, Depends, HTTPException, Query
 from models import User
-from services.exceptions import ResourceDoesNotExist, ResourceAlreadyExists
-from services.ratings import get_ratings_service, RatingsService
+from services.exceptions import ResourceAlreadyExists, ResourceDoesNotExist
+from services.ratings import RatingsService, get_ratings_service
 
 router = APIRouter()
 
 
 @router.get('/')
 async def get_rating_list(
-        film_id: UUID | None = Query(default=None),
-        user_id: UUID | None = Query(default=None),
+        film_id: Optional[UUID] = Query(default=None),
+        user_id: Optional[UUID] = Query(default=None),
         paginate_by: dict = Depends(get_page_params()),
         service: RatingsService = Depends(get_ratings_service),
 ) -> RatingListResponse:

@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
+from typing import List
 from uuid import UUID
-
-from motor.motor_asyncio import AsyncIOMotorClient
 
 from db import mongo
 from models import Bookmark
+from motor.motor_asyncio import AsyncIOMotorClient
 from services.exceptions import ResourceAlreadyExists, ResourceDoesNotExist
 
 
@@ -14,7 +14,7 @@ class BookmarksService(ABC):
                                 user_id: UUID,
                                 offset: int,
                                 limit: int,
-                                ) -> list[Bookmark]:
+                                ) -> List[Bookmark]:
         ...
 
     @abstractmethod
@@ -38,7 +38,7 @@ class MongoDBBookmarksService(BookmarksService):
                                 user_id: UUID,
                                 offset: int,
                                 limit: int,
-                                ) -> list[Bookmark]:
+                                ) -> List[Bookmark]:
         pipeline = [
             {'$match': {'user_id': user_id}},
             {'$sort': {'created': -1}},

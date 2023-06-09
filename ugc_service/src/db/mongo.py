@@ -1,8 +1,9 @@
 from functools import lru_cache
+from typing import Optional
 
 from motor.motor_asyncio import AsyncIOMotorClient
 
-client: AsyncIOMotorClient | None = None
+client: Optional[AsyncIOMotorClient] = None
 
 
 @lru_cache
