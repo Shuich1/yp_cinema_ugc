@@ -16,8 +16,13 @@ def duplicate_first_row(gen_func: Callable) -> Callable:
 
 def split_into_chunks(iterable: Iterable, size: int) -> Iterator[list]:
     iterator = iter(iterable)
-    while chunk := list(islice(iterator, size)):
-        yield chunk
+    try:
+        chunk = list(islice(iterator, size))
+        while chunk:
+            yield chunk
+            chunk = list(islice(iterator, size))
+    except StopIteration:
+        return
 
 
 def measure_time(func: Callable, *args, repeats: int = 1, **kwargs) -> float:
