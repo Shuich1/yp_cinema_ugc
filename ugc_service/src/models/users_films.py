@@ -1,12 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-import orjson
-from pydantic import BaseModel
-
-
-def orjson_dumps(v, *, default):
-    return orjson.dumps(v, default=default).decode()
+from models.base import BaseModel
 
 
 class UserFilmTimestamp(BaseModel):
@@ -15,7 +10,3 @@ class UserFilmTimestamp(BaseModel):
     start_time: int
     end_time: int
     timestamp: datetime
-
-    class Config:
-        json_loads = orjson.loads
-        json_dumps = orjson_dumps

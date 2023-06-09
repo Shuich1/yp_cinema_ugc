@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     # Auth
     authjwt_secret_key: str
 
+    # MongoDB settings
+    mongodb_uri: str
+
     class Config:
         env_file = ENV_FILE_PATH
 

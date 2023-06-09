@@ -11,4 +11,4 @@ KAFKA_VIEW_TOPIC=views
 CLICKHOUSE_HOST=ugc-clickhouse-node1
 CLICKHOUSE_PORT=9000
 BACKOFF_MAX_TIME=300
-authjwt_secret_key=${JWT_SECRET_KEY}
+MONGODB_URI=mongodb://mongo_r1:27017,mongo_r2:27017
