@@ -49,5 +49,5 @@ class KafkaOltp(GenericOltp):
 oltp_bd: Optional[GenericOltp] = None
 
 
-async def get_oltp() -> GenericOltp:
+async def get_oltp() -> Optional[GenericOltp]:
     return oltp_bd

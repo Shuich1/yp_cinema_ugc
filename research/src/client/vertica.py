@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import ContextManager, Iterable
+from typing import Generator, Iterable
 
 import backoff
 import vertica_python
@@ -16,7 +16,7 @@ class VerticaClient(DBClient):
         self.connection = None
 
     @contextmanager
-    def connect(self) -> ContextManager:
+    def connect(self) -> Generator:
         try:
             self.connection = self._acquire_connection()
             yield
@@ -47,7 +47,7 @@ class VerticaClient(DBClient):
         query = '''
             SELECT end_time
             FROM timecodes
-            WHERE film_id = %s 
+            WHERE film_id = %s
               AND user_id = %s
             ORDER BY event_time DESC
             LIMIT 1
@@ -59,7 +59,7 @@ class VerticaClient(DBClient):
     def retrieve_most_viewed(self, films_count: int = 10) -> None:
         query = '''
             SELECT film_id, COUNT(*) AS views
-            FROM timecodes 
+            FROM timecodes
             GROUP BY film_id
             ORDER BY views DESC
             LIMIT %s

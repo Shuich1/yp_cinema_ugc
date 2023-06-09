@@ -21,7 +21,8 @@ class ClickhouseLoader:
                 self.client.disconnect()
         except Exception:
             logger.exception(
-                'Возникла ошибка при закрытии соединения Clickouse, host=%s', self.host
+                'Возникла ошибка при закрытии соединения Clickouse, host=%s',
+                self.host
             )
 
     @property

@@ -79,15 +79,15 @@ class MongoDBRatingsService(RatingsService):
                             user_id: UUID,
                             rating: int,
                             ) -> Rating:
-        rating = Rating(film_id=film_id, user_id=user_id, rating=rating)
+        res_rating = Rating(film_id=film_id, user_id=user_id, rating=rating)
         result = await self._ratings.update_one(
-            filter=rating.dict(include={'film_id', 'user_id'}),
-            update={'$setOnInsert': rating.dict()},
+            filter=res_rating.dict(include={'film_id', 'user_id'}),
+            update={'$setOnInsert': res_rating.dict()},
             upsert=True,
         )
         if result.matched_count:
             raise ResourceAlreadyExists()
-        return rating
+        return res_rating
 
     async def get_rating(self, film_id: UUID, user_id: UUID) -> Rating:
         rating = await self._ratings.find_one({
@@ -103,10 +103,10 @@ class MongoDBRatingsService(RatingsService):
                             user_id: UUID,
                             rating: int,
                             ) -> Rating:
-        rating = Rating(film_id=film_id, user_id=user_id, rating=rating)
+        res_rating = Rating(film_id=film_id, user_id=user_id, rating=rating)
         result = await self._ratings.find_one_and_update(
-            filter=rating.dict(include={'film_id', 'user_id'}),
-            update={'$set': rating.dict(exclude={'created'})},
+            filter=res_rating.dict(include={'film_id', 'user_id'}),
+            update={'$set': res_rating.dict(exclude={'created'})},
             return_document=ReturnDocument.AFTER,
         )
         if not result:

@@ -28,12 +28,15 @@ router = APIRouter()
 
 
 @router.post('/',
-             summary='Создание временной метки о просмотренной пользователем части кинопроизведения',
-             description='Создание временной метки о просмотренной пользователем части кинопроизведения',
+             summary='Создание временной метки о просмотренной пользователем части кинопроизведения', # noqa
+             description='Создание временной метки о просмотренной пользователем части кинопроизведения', # noqa
              responses={
-                HTTPStatus.OK: {'model': BaseResponse, 'description': 'Результат операции'},
-                HTTPStatus.BAD_REQUEST: {'model': HTTPError},
-                HTTPStatus.FORBIDDEN: {'model': HTTPError}
+                 HTTPStatus.OK: {
+                     'model': BaseResponse,
+                     'description': 'Результат операции'
+                 },
+                 HTTPStatus.BAD_REQUEST: {'model': HTTPError},
+                 HTTPStatus.FORBIDDEN: {'model': HTTPError}
              })
 async def create_user_film_timestamp(
         user_film_data: UserFilmTimestamp,
@@ -44,21 +47,28 @@ async def create_user_film_timestamp(
     current_user = await Authorize.get_jwt_subject()
     if current_user != str(user_film_data.user_id):
         return HTTPException(
-            status_code=HTTPStatus.FORBIDDEN, detail="user_id в токене не соответсвует user_id в timestamp"
+            status_code=HTTPStatus.FORBIDDEN,
+            detail="user_id в токене не соответсвует user_id в timestamp"
         )
     try:
         await ugc_service.create_user_film_timestamp(user_film_data)
     except BaseException as exception:
-        return HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=exception.__str__())
+        return HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=exception.__str__()
+        )
 
     return BaseResponse(detail='ok')
 
 
 @router.get('/{user_id}/{film_id}/last_timestamp',
-            summary='Получить последнюю временную метку просмотренной пользователем части кинопроизведения',
-            description='Получить последнюю временную метку просмотренной пользователем части кинопроизведения',
+            summary='Получить последнюю временную метку просмотренной пользователем части кинопроизведения', # noqa
+            description='Получить последнюю временную метку просмотренной пользователем части кинопроизведения', # noqa
             responses={
-                HTTPStatus.OK: {'model': UserFilmTimestamp, 'description': 'Временная метка'},
+                HTTPStatus.OK: {
+                    'model': UserFilmTimestamp,
+                    'description': 'Временная метка'
+                },
                 HTTPStatus.NO_CONTENT: {'description': "Item not found"},
                 HTTPStatus.BAD_REQUEST: {'model': HTTPError},
                 HTTPStatus.FORBIDDEN: {'model': HTTPError}
@@ -80,7 +90,10 @@ async def get_last_user_film_timestamp(
     try:
         timestamp = await ugc_service.get_last_timestamp(user_id, film_id)
     except BaseException as exception:
-        return HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=exception.__str__())
+        return HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=exception.__str__()
+        )
     if not timestamp:
         return
     return timestamp

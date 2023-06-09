@@ -12,12 +12,19 @@ logger = getLogger(__name__)
 def main():
     transofmer = Transformer()
     with (
-        KafkaExtractor(settings.kafka_topic, settings.kafka_server, settings.kafka_groupid) as extractor,
+        KafkaExtractor(
+            settings.kafka_topic,
+            settings.kafka_server,
+            settings.kafka_groupid
+        ) as extractor,
         ClickhouseLoader(settings.clickhouse_host) as loader
     ):
         for kafka_bulk_data in extractor.get_updates():
             if kafka_bulk_data.payload:
-                transformed_data = transofmer.kafka_to_clickhouse(kafka_bulk_data, settings.clickhouse_tablename)
+                transformed_data = transofmer.kafka_to_clickhouse(
+                    kafka_bulk_data,
+                    settings.clickhouse_tablename
+                )
                 loader.load(transformed_data)
             sleep(settings.sleep_interval)
 

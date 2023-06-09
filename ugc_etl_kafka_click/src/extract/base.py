@@ -25,7 +25,10 @@ class KafkaExtractor:
             if self._consumer:
                 self._consumer.close(autocommit=False)
         except Exception:
-            logger.exception('Возникла ошибка при закрытии соединения Kafka, server=%s', self.server)
+            logger.exception(
+                'Возникла ошибка при закрытии соединения Kafka, server=%s',
+                self.server
+            )
 
     @property
     @backoff.on_exception(backoff.expo,
@@ -59,7 +62,10 @@ class KafkaExtractor:
                     try:
                         kafka_data = KafkaData(**record.value)
                     except Exception:
-                        logger.warning('Пропуск записи %s. Неверный формат', record.value)
+                        logger.warning(
+                            'Пропуск записи %s. Неверный формат',
+                            record.value
+                        )
                     else:
                         result.payload.append(kafka_data)
             yield result

@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import partial
 from queue import Queue
-from typing import Iterable, Iterator, Callable, Any
+from typing import Iterable, Iterator, Callable, Any, List
 
 from client.base import DBClient
 from data import test_data
@@ -49,8 +49,8 @@ class TestResult:
 
 class TestSuite:
     def __init__(self, rows_count: int, wps: int, readers_count: int):
-        self.clients = []
-        self.queue = Queue()
+        self.clients: List[DBClient] = []
+        self.queue: Queue = Queue()
         self.rows_count = rows_count
         self.wps = wps
         self.readers_count = readers_count
