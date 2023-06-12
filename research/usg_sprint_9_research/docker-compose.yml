@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  test_stand:
+    container_name: "test_stand_usg_9"
+    build:
+      context: ../
+      dockerfile: usg_sprint_9_research/Dockerfile
+    environment:
+      - INITIAL_ROWS_COUNT=1_000_000
+      - STRESS_TESTS_WPS=10_000
+      - READERS_COUNT=10
+
+  mongo:
+    container_name: mongosingle
+    image: mongo
+    ports:
+      - 27017:27017
+    expose:
+      - "27017"
+    environment:
+      MONGO_INITDB_DATABASE: movie_db_usg_9_test
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ../tmp_db_test/mongo_cluster/data1:/data/db
+
+  postgres:
+    container_name: postgres
+    image: postgres:14
+    ports:
+      - 5432:5432
+    expose:
+      - "5432"
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_DB=movie_db_usg_9_test
+      - POSTGRES_PASSWORD=123qwe
+      - POSTGRES_USER=app
+    volumes:
+      - ../tmp_db_test/data:/var/lib/postgresql/data
