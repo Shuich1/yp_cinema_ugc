@@ -7,6 +7,7 @@ all:
 	@echo "make async_tests - Запуск тестов асинхронного сервиса."
 	@echo "make auth_tests - Запуск тестов сервиса авторизации."
 	@echo "make research_db - Запуск исследования СУБД"
+	@echo "make research_db_usg_sprint_9 - Запуск исследования СУБД - Спринт 9"
 start:
 	docker-compose -f docker-compose.yml -f mongo.docker-compose.yml up -d --build
 stop:
@@ -31,3 +32,9 @@ init_mongo_cluster:
 	&& sleep 30 \
 	&& docker exec mongo_r1 sh -c "mongosh < /opt/initdb/sc.js" \
 	&& docker exec mongo_r1 sh -c "mongosh < /opt/initdb/sh.js"
+research_db_usg_sprint_9:
+	cd research \
+	&& cd usg_sprint_9_research \
+	&& docker-compose up -d --build \
+	&& docker logs -f test_stand_usg_9 \
+	&& docker-compose down -v

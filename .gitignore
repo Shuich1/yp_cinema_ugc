@@ -164,3 +164,4 @@ cython_debug/
 *.env
 pg_storage.json
 elasticsearch-data
+research/tmp_db_test/
