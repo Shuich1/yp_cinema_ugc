@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import partial
 from queue import Queue
-from typing import Iterable, Iterator, Callable, Any
+from typing import Iterable, Iterator, Callable, Any, List, Dict
 
 from client.base import DBClient
 from data import test_data
@@ -49,8 +49,8 @@ class TestResult:
 
 class TestSuite:
     def __init__(self, rows_count: int, wps: int, readers_count: int):
-        self.clients = []
-        self.queue = Queue()
+        self.clients: List[DBClient] = []
+        self.queue: Queue = Queue()
         self.rows_count = rows_count
         self.wps = wps
         self.readers_count = readers_count
@@ -105,7 +105,7 @@ class TestSuite:
     def run_static_tests(client: DBClient,
                          film_id: str,
                          user_id: str,
-                         ) -> dict[str, float]:
+                         ) -> Dict[str, float]:
         with client.connect():
             data = list(test_data(100_000))
             t1 = measure_time(client.insert_data, data)
@@ -128,7 +128,7 @@ class TestSuite:
                          client: DBClient,
                          film_id: str,
                          user_id: str,
-                         ) -> dict[str, float]:
+                         ) -> Dict[str, float]:
         max_producing_time = 10
         data = test_data(max_producing_time * self.wps)
 
@@ -166,7 +166,7 @@ class TestSuite:
                                 client: DBClient,
                                 film_id: str,
                                 user_id: str,
-                                ) -> dict[str, float]:
+                                ) -> Dict[str, float]:
         r1 = self.run_in_parallel(
             client,
             partial(

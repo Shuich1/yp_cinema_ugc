@@ -1,3 +1,4 @@
+# flake8: noqa
 from logging import Filter
 from core.middleware import get_request_id
 

@@ -1,13 +1,13 @@
 from http import HTTPStatus
+from logging import getLogger
 from uuid import UUID
 
+from async_fastapi_jwt_auth import AuthJWT
 from fastapi import APIRouter, Depends, HTTPException
 from models.users_films import UserFilmTimestamp
 from pydantic import BaseModel
 from services.users_films import UserFilmService, get_userfilm_service
-from async_fastapi_jwt_auth import AuthJWT
 
-from logging import getLogger
 logger = getLogger(__name__)
 
 
@@ -28,12 +28,15 @@ router = APIRouter()
 
 
 @router.post('/',
-             summary='Создание временной метки о просмотренной пользователем части кинопроизведения',
-             description='Создание временной метки о просмотренной пользователем части кинопроизведения',
+             summary='Создание временной метки о просмотренной пользователем части кинопроизведения', # noqa
+             description='Создание временной метки о просмотренной пользователем части кинопроизведения', # noqa
              responses={
-                HTTPStatus.OK: {'model': BaseResponse, 'description': 'Результат операции'},
-                HTTPStatus.BAD_REQUEST: {'model': HTTPError},
-                HTTPStatus.FORBIDDEN: {'model': HTTPError}
+                 HTTPStatus.OK: {
+                     'model': BaseResponse,
+                     'description': 'Результат операции'
+                 },
+                 HTTPStatus.BAD_REQUEST: {'model': HTTPError},
+                 HTTPStatus.FORBIDDEN: {'model': HTTPError}
              })
 async def create_user_film_timestamp(
         user_film_data: UserFilmTimestamp,
@@ -45,7 +48,8 @@ async def create_user_film_timestamp(
     if current_user != str(user_film_data.user_id):
         logger.error('user_id в токене не соответсвует user_id в timestamp')
         return HTTPException(
-            status_code=HTTPStatus.FORBIDDEN, detail="user_id в токене не соответсвует user_id в timestamp"
+            status_code=HTTPStatus.FORBIDDEN,
+            detail="user_id в токене не соответсвует user_id в timestamp"
         )
     try:
         await ugc_service.create_user_film_timestamp(user_film_data)
@@ -57,10 +61,13 @@ async def create_user_film_timestamp(
 
 
 @router.get('/{user_id}/{film_id}/last_timestamp',
-            summary='Получить последнюю временную метку просмотренной пользователем части кинопроизведения',
-            description='Получить последнюю временную метку просмотренной пользователем части кинопроизведения',
+            summary='Получить последнюю временную метку просмотренной пользователем части кинопроизведения', # noqa
+            description='Получить последнюю временную метку просмотренной пользователем части кинопроизведения', # noqa
             responses={
-                HTTPStatus.OK: {'model': UserFilmTimestamp, 'description': 'Временная метка'},
+                HTTPStatus.OK: {
+                    'model': UserFilmTimestamp,
+                    'description': 'Временная метка'
+                },
                 HTTPStatus.NO_CONTENT: {'description': "Item not found"},
                 HTTPStatus.BAD_REQUEST: {'model': HTTPError},
                 HTTPStatus.FORBIDDEN: {'model': HTTPError}
@@ -84,6 +91,7 @@ async def get_last_user_film_timestamp(
     except BaseException as exception:
         logger.error(exception.__str__())
         return HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=exception.__str__())
+
     if not timestamp:
         return
     return timestamp

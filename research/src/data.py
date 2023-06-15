@@ -17,8 +17,8 @@ def test_data(rows_count: int) -> Iterator[tuple]:
     film_length = 60 * 60 * 3
 
     event_time_range = (
-        datetime(2020, 1, 1).timestamp(),
-        datetime(2023, 1, 1).timestamp(),
+        int(datetime(2020, 1, 1).timestamp()),
+        int(datetime(2023, 1, 1).timestamp()),
     )
 
     for _ in range(rows_count):

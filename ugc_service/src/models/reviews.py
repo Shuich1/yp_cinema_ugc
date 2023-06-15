@@ -1,10 +1,9 @@
 from datetime import datetime
-from typing import Literal
+from typing_extensions import Literal
 from uuid import UUID, uuid4
 
-from pydantic import Field
-
 from models.base import BaseModel
+from pydantic import Field
 
 
 class Review(BaseModel):

@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import ContextManager, Iterable
+from typing import Generator, Iterable
 
 import backoff
 from clickhouse_driver import Client
@@ -17,7 +17,7 @@ class ClickHouseClient(DBClient):
         self.client = None
 
     @contextmanager
-    def connect(self) -> ContextManager:
+    def connect(self) -> Generator:
         try:
             self.client = Client(**self.connection_info)
             self._check_connection()
@@ -49,9 +49,9 @@ class ClickHouseClient(DBClient):
 
     def retrieve_last_timecode(self, film_id: str, user_id: str) -> None:
         query = '''
-            SELECT end_time 
+            SELECT end_time
             FROM movies.timecodes
-            WHERE film_id = %(film_id)s 
+            WHERE film_id = %(film_id)s
               AND user_id = %(user_id)s
             ORDER BY event_time DESC
             LIMIT 1

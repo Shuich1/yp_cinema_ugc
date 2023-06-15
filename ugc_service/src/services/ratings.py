@@ -1,22 +1,22 @@
 from abc import ABC, abstractmethod
+from typing import List, Optional
 from uuid import UUID
 
+from db import mongo
+from models import OverallRating, Rating
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import ReturnDocument
-
-from db import mongo
-from models import Rating, OverallRating
 from services.exceptions import ResourceAlreadyExists, ResourceDoesNotExist
 
 
 class RatingsService(ABC):
     @abstractmethod
     async def get_rating_list(self,
-                              film_id: UUID | None,
-                              user_id: UUID | None,
+                              film_id: Optional[UUID],
+                              user_id: Optional[UUID],
                               offset: int,
                               limit: int,
-                              ) -> list[Rating]:
+                              ) -> List[Rating]:
         ...
 
     @abstractmethod
@@ -53,11 +53,11 @@ class MongoDBRatingsService(RatingsService):
         self._ratings = mongo_client.films.ratings
 
     async def get_rating_list(self,
-                              film_id: UUID | None,
-                              user_id: UUID | None,
+                              film_id: Optional[UUID],
+                              user_id: Optional[UUID],
                               offset: int,
                               limit: int,
-                              ) -> list[Rating]:
+                              ) -> List[Rating]:
         pipeline = [
             {'$sort': {'updated': -1}},
             {'$skip': offset},
@@ -79,15 +79,15 @@ class MongoDBRatingsService(RatingsService):
                             user_id: UUID,
                             rating: int,
                             ) -> Rating:
-        rating = Rating(film_id=film_id, user_id=user_id, rating=rating)
+        res_rating = Rating(film_id=film_id, user_id=user_id, rating=rating)
         result = await self._ratings.update_one(
-            filter=rating.dict(include={'film_id', 'user_id'}),
-            update={'$setOnInsert': rating.dict()},
+            filter=res_rating.dict(include={'film_id', 'user_id'}),
+            update={'$setOnInsert': res_rating.dict()},
             upsert=True,
         )
         if result.matched_count:
             raise ResourceAlreadyExists()
-        return rating
+        return res_rating
 
     async def get_rating(self, film_id: UUID, user_id: UUID) -> Rating:
         rating = await self._ratings.find_one({
@@ -103,10 +103,10 @@ class MongoDBRatingsService(RatingsService):
                             user_id: UUID,
                             rating: int,
                             ) -> Rating:
-        rating = Rating(film_id=film_id, user_id=user_id, rating=rating)
+        res_rating = Rating(film_id=film_id, user_id=user_id, rating=rating)
         result = await self._ratings.find_one_and_update(
-            filter=rating.dict(include={'film_id', 'user_id'}),
-            update={'$set': rating.dict(exclude={'created'})},
+            filter=res_rating.dict(include={'film_id', 'user_id'}),
+            update={'$set': res_rating.dict(exclude={'created'})},
             return_document=ReturnDocument.AFTER,
         )
         if not result:
@@ -133,7 +133,7 @@ class MongoDBRatingsService(RatingsService):
         ]
         result = self._ratings.aggregate(pipeline)
         try:
-            rating_stats = await anext(result)
+            rating_stats = await result.__anext__()
         except StopAsyncIteration:
             raise ResourceDoesNotExist()
         return OverallRating(film_id=film_id, **rating_stats)

@@ -1,22 +1,22 @@
 from abc import ABC, abstractmethod
+from typing import List, Optional, Tuple
 from uuid import UUID
-
-from motor.motor_asyncio import AsyncIOMotorClient
 
 from db import mongo
 from models import Review, ReviewVote
-from services.exceptions import ResourceDoesNotExist, ResourceAlreadyExists
+from motor.motor_asyncio import AsyncIOMotorClient
+from services.exceptions import ResourceAlreadyExists, ResourceDoesNotExist
 
 
 class ReviewsService(ABC):
     @abstractmethod
     async def get_review_list(self,
-                              film_id: UUID | None,
-                              user_id: UUID | None,
+                              film_id: Optional[UUID],
+                              user_id: Optional[UUID],
                               sort_by: dict,
                               offset: int,
                               limit: int,
-                              ) -> list[Review]:
+                              ) -> List[Review]:
         ...
 
     @abstractmethod
@@ -70,12 +70,12 @@ class MongoDBReviewsService(ReviewsService):
         self._review_votes = mongo_client.films.review_votes
 
     async def get_review_list(self,
-                              film_id: UUID | None,
-                              user_id: UUID | None,
+                              film_id: Optional[UUID],
+                              user_id: Optional[UUID],
                               sort_by: dict,
                               offset: int,
                               limit: int,
-                              ) -> list[Review]:
+                              ) -> List[Review]:
         add_fields, sort = self._get_sorting_params(sort_by)
         pipeline = [
             {'$addFields': add_fields},
@@ -95,7 +95,7 @@ class MongoDBReviewsService(ReviewsService):
         return [Review(**review) async for review in reviews]
 
     @staticmethod
-    def _get_sorting_params(sort_by: dict) -> tuple[dict, dict]:
+    def _get_sorting_params(sort_by: dict) -> Tuple[dict, dict]:
         add_fields = {}
         sort = {}
         for field, order in sort_by.items():

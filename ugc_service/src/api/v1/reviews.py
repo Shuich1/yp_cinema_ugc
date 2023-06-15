@@ -1,19 +1,13 @@
 from http import HTTPStatus
+from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-
 from api.auth import JWTBearer
-from api.schemas import (
-    ReviewResponse,
-    ReviewListResponse,
-    ReviewCreate,
-    ReviewVoteResponse,
-    ReviewVoteCreate,
-    ReviewVoteUpdate,
-    APIException,
-)
+from api.schemas import (APIException, ReviewCreate, ReviewListResponse,
+                         ReviewResponse, ReviewVoteCreate, ReviewVoteResponse,
+                         ReviewVoteUpdate)
 from api.utils import get_page_params, get_sorting_params
+from fastapi import APIRouter, Depends, HTTPException, Query
 from models import User
 from services.exceptions import ResourceDoesNotExist, ResourceAlreadyExists
 from services.reviews import get_reviews_service, ReviewsService
@@ -26,8 +20,8 @@ router = APIRouter()
 
 @router.get('/')
 async def get_review_list(
-        film_id: UUID | None = Query(default=None),
-        user_id: UUID | None = Query(default=None),
+        film_id: Optional[UUID] = Query(default=None),
+        user_id: Optional[UUID] = Query(default=None),
         paginate_by: dict = Depends(get_page_params()),
         sort_by: dict = Depends(
             get_sorting_params(

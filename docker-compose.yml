@@ -1,160 +1,7 @@
 version: "3.9"
 services:
-
-  postgres:
-    image: postgres:13
-    container_name: postgres
-    env_file:
-      - .env
-    expose:
-      - "5432"
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    volumes:
-      - ./db_init.sql:/docker-entrypoint-initdb.d/db_init.sql
-      - database:/var/lib/postgresql/data
-
-  django:
-    container_name: django
-    build: ./app
-    env_file:
-      - .env
-    healthcheck:
-      test: [ "CMD-SHELL", "curl --silent ${ALLOWED_HOSTS}:${DJANGO_PORT} >/dev/null || exit 1" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    depends_on:
-      postgres:
-        condition: service_healthy
-    expose:
-      - "8000"
-    volumes:
-      - ./app/static:/opt/app/static:rw
-
-  nginx:
-    container_name: nginx
-    image: nginx:1.23.2
-    logging:
-      driver: gelf
-      options:
-        gelf-address: udp://127.0.0.1:5044
-        tag: nginx
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/config:/etc/nginx/conf.d:ro
-      - ./app/static:/data/static:ro
-    depends_on:
-      django:
-        condition: service_healthy
-      fastapi:
-        condition: service_healthy
-    ports:
-      - "80:80"
-
-  elastic:
-    container_name: elastic
-    image: elasticsearch:7.17.8
-    environment:
-      - discovery.type=single-node
-      - ES_JAVA_OPTS=-Xms2048m -Xmx2048m
-    #    volumes:
-    #      - ./elasticsearch-data:/usr/share/elasticsearch/data
-    healthcheck:
-      test: [ "CMD-SHELL", "curl --silent ${ES_URL}  >/dev/null || exit 1" ]
-      interval: 10s
-      timeout: 10s
-      retries: 10
-    expose:
-      - "9200"
-
-  etl:
-    container_name: etl
-    build: ./postgres_to_es
-    env_file:
-      - .env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      elastic:
-        condition: service_healthy
-
-  sqlite_to_pg:
-    container_name: sqlite_to_pg
-    build: ./sqlite_to_postgres
-    depends_on:
-      postgres:
-        condition: service_healthy
-      django:
-        condition: service_healthy
-    volumes:
-      - ./.env:/opt/sqlite_to_postgres/.env:ro
-
-  redis:
-    image: redis:7.0.8
-    expose:
-      - "6379"
-
-  fastapi:
-    container_name: fastapi
-    build: ./fastapi-solution
-    healthcheck:
-      test: [ "CMD-SHELL", "curl --silent ${FASTAPI_HOST}:${FASTAPI_PORT} -H 'X-Request-Id: healthcheck' >/dev/null || exit 1" ]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-    env_file:
-      - .env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      elastic:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    expose:
-      - "80"
-    volumes:
-      - ./schema/user.json:/opt/fastapi/user.json:ro
-
-  auth_postgres:
-    image: postgres:13
-    env_file:
-      - environments/auth_service_postgress
-    expose:
-      - 5432
-    volumes:
-      - auth_postgres_data:/var/lib/postgresql/data/
-
-  auth_redis:
-    image: redis:7.0.7
-    expose:
-      - 6379
-    volumes:
-      - auth_redis_data:/data
-
-  auth:
-    container_name: auth
-    build:
-      context: ./auth_service
-      dockerfile: Dockerfile
-    env_file: environments/auth_service
-    ports:
-      - 5000:5000
-    depends_on:
-      - auth_postgres
-      - auth_redis
-
-  ugc:
-    container_name: ugc
-    logging:
-      driver: gelf
-      options:
-        gelf-address: udp://127.0.0.1:5044
-        tag: ugc
+  ugc-fastapi:
+    container_name: ugc-fastapi
     build:
       context: ./ugc_service
       dockerfile: Dockerfile
@@ -165,11 +12,11 @@ services:
     environment:
       - AUTHJWT_SECRET_KEY=${JWT_SECRET_KEY}
     depends_on:
-      kafka:
+      ugc-kafka:
         condition: service_healthy
 
-  ugc_etl_kafka_click:
-    container_name: ugc_etl_kafka_click
+  ugc-etl:
+    container_name: ugc-etl
     build:
       context: ./ugc_etl_kafka_click
       dockerfile: Dockerfile
@@ -206,7 +53,6 @@ services:
     depends_on:
       - log-elasticsearch
 
-
   jaeger:
     container_name: jaeger
     image: jaegertracing/all-in-one:1.42
@@ -222,10 +68,10 @@ services:
       - "16686"
       - "6831/udp"
   
-  kafka-zookeeper:
+  ugc-kafka-zookeeper:
     image: confluentinc/cp-zookeeper:7.3.3
-    hostname: kafka-zookeeper
-    container_name: kafka-zookeeper
+    hostname: ugc-kafka-zookeeper
+    container_name: ugc-kafka-zookeeper
     ports:
       - "2181:2181"
     environment:
@@ -233,32 +79,32 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     restart: always
 
-  kafka:
+  ugc-kafka:
     image: confluentinc/cp-kafka:7.3.3
-    container_name: kafka
+    container_name: ugc-kafka
     healthcheck:
-      test: ["CMD-SHELL", "kafka-topics --bootstrap-server kafka:9092 --list"]
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server ugc-kafka:9092 --list"]
       interval: 10s
       timeout: 10s
       retries: 5
       start_period: 10s
     depends_on:
-      - kafka-zookeeper
+      - ugc-kafka-zookeeper
     ports:
       - "9092:9092"
       - "9101:9101"
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'kafka-zookeeper:2181'
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_ZOOKEEPER_CONNECT: 'ugc-kafka-zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://ugc-kafka:9092,PLAINTEXT_INTERNAL://ugc-kafka:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     restart: always
 
-  clickhouse-zookeeper:
+  ugc-clickhouse-zookeeper:
     image: zookeeper:3.5
-    container_name: clickhouse-zookeeper
-    hostname: clickhouse-zookeeper
+    container_name: ugc-clickhouse-zookeeper
+    hostname: ugc-clickhouse-zookeeper
     healthcheck:
       test: nc -z localhost 2181 || exit -1
       interval: 10s
@@ -266,10 +112,10 @@ services:
       retries: 3
       start_period: 10s
 
-  clickhouse-node1:
+  ugc-clickhouse-node1:
     image: yandex/clickhouse-server:20.4
-    container_name: clickhouse-node1
-    hostname: clickhouse-node1
+    container_name: ugc-clickhouse-node1
+    hostname: ugc-clickhouse-node1
     ports:
       - "8123:8123"
       - "9000:9000"
@@ -277,48 +123,40 @@ services:
       - ./ch_config/node1:/etc/clickhouse-server
       - ./ch_config/sql/node1.sql:/docker-entrypoint-initdb.d/init.sql
     depends_on:
-      clickhouse-zookeeper:
+      ugc-clickhouse-zookeeper:
         condition: service_healthy
 
-  clickhouse-node2:
+  ugc-clickhouse-node2:
     image: yandex/clickhouse-server:20.4
-    container_name: clickhouse-node2
-    hostname: clickhouse-node2
+    container_name: ugc-clickhouse-node2
+    hostname: ugc-clickhouse-node2
     volumes:
       - ./ch_config/node2:/etc/clickhouse-server
     depends_on:
-      clickhouse-zookeeper:
+      ugc-clickhouse-zookeeper:
         condition: service_healthy
 
-  clickhouse-node3:
+  ugc-clickhouse-node3:
     image: yandex/clickhouse-server:20.4
-    container_name: clickhouse-node3
-    hostname: clickhouse-node3
+    container_name: ugc-clickhouse-node3
+    hostname: ugc-clickhouse-node3
     volumes:
       - ./ch_config/node3:/etc/clickhouse-server
       - ./ch_config/sql/node3.sql:/docker-entrypoint-initdb.d/init.sql
     depends_on:
-      clickhouse-zookeeper:
+      ugc-clickhouse-zookeeper:
         condition: service_healthy
 
-  clickhouse-node4:
+  ugc-clickhouse-node4:
     image: yandex/clickhouse-server:20.4
-    container_name: clickhouse-node4
-    hostname: clickhouse-node4
+    container_name: ugc-clickhouse-node4
+    hostname: ugc-clickhouse-node4
     volumes:
       - ./ch_config/node4:/etc/clickhouse-server
     depends_on:
-      clickhouse-zookeeper:
+      ugc-clickhouse-zookeeper:
         condition: service_healthy
 
 volumes:
-  database:
-  auth_postgres_data:
-  auth_redis_data:
-  static_volume:
-  elasticsearch-data:
-    driver: local
-  jaeger_data:
-  migrations:
   ch_config:
   log_esdata:

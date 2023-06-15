@@ -1,5 +1,5 @@
 from logging import getLogger
-from typing import Generator
+from typing import Generator, Optional
 from kafka import KafkaConsumer, errors
 from .schema import KafkaData, KafkaBulkData
 from core.config import settings
@@ -25,7 +25,10 @@ class KafkaExtractor:
             if self._consumer:
                 self._consumer.close(autocommit=False)
         except Exception:
-            logger.exception('Возникла ошибка при закрытии соединения Kafka, server=%s', self.server)
+            logger.exception(
+                'Возникла ошибка при закрытии соединения Kafka, server=%s',
+                self.server
+            )
 
     @property
     @backoff.on_exception(backoff.expo,
@@ -47,7 +50,7 @@ class KafkaExtractor:
     @backoff.on_exception(backoff.expo,
                           (errors.NoBrokersAvailable, ConnectionRefusedError),
                           max_time=settings.backoff_max_time)
-    def get_updates(self) -> Generator[KafkaBulkData | None, None, None]:
+    def get_updates(self) -> Generator[Optional[KafkaBulkData], None, None]:
         while True:
             result = KafkaBulkData(payload=[])
             response = self.consumer.poll(
@@ -59,7 +62,10 @@ class KafkaExtractor:
                     try:
                         kafka_data = KafkaData(**record.value)
                     except Exception:
-                        logger.warning('Пропуск записи %s. Неверный формат', record.value)
+                        logger.warning(
+                            'Пропуск записи %s. Неверный формат',
+                            record.value
+                        )
                     else:
                         result.payload.append(kafka_data)
             yield result

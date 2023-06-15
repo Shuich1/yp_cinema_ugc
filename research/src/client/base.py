@@ -1,14 +1,14 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from copy import copy
-from typing import ContextManager, Iterable
+from typing import Generator, Iterable
 
 
 class DBClient(ABC):
     dbms_name: str
 
     @contextmanager
-    def connect(self) -> ContextManager:
+    def connect(self) -> Generator:
         yield
 
     def copy(self) -> 'DBClient':

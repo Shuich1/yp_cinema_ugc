@@ -1,11 +1,11 @@
 from functools import lru_cache
+from uuid import UUID
 
 from core.config import settings
 from db.olap import GenericOlap, get_olap
 from db.oltp import GenericOltp, get_oltp
 from fastapi import Depends
 from models.users_films import UserFilmTimestamp
-from uuid import UUID
 
 
 class UserFilmService:
@@ -13,7 +13,10 @@ class UserFilmService:
         self.olap = olap
         self.oltp = oltp
 
-    async def create_user_film_timestamp(self, user_film_data: UserFilmTimestamp):
+    async def create_user_film_timestamp(
+        self,
+        user_film_data: UserFilmTimestamp
+    ):
         return await self.oltp.write(
             key=f'{user_film_data.user_id}+{user_film_data.film_id}',
             data=user_film_data.json(),
@@ -21,13 +24,16 @@ class UserFilmService:
         )
 
     async def get_last_timestamp(self, user_id: UUID, film_id: UUID):
-        timestamp = await self.olap.get_last_user_film_timestamp(user_id, film_id)
+        timestamp = await self.olap.get_last_user_film_timestamp(
+            user_id,
+            film_id
+        )
         return timestamp
 
 
 @lru_cache()
 def get_userfilm_service(
-        olap: GenericOlap = Depends(get_olap),
-        oltp: GenericOltp = Depends(get_oltp),
+    olap: GenericOlap = Depends(get_olap),
+    oltp: GenericOltp = Depends(get_oltp),
 ) -> UserFilmService:
     return UserFilmService(olap, oltp)

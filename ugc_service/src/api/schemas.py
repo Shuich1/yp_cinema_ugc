@@ -1,10 +1,10 @@
-from typing import Literal
+from typing import List
+from typing_extensions import Literal
 from uuid import UUID
 
-from pydantic import Field
-
-from models import Rating, OverallRating, Review, ReviewVote, Bookmark
+from models import Bookmark, OverallRating, Rating, Review, ReviewVote
 from models.base import BaseModel
+from pydantic import Field
 
 
 class RatingResponse(BaseModel):
@@ -12,7 +12,7 @@ class RatingResponse(BaseModel):
 
 
 class RatingListResponse(BaseModel):
-    ratings: list[Rating]
+    ratings: List[Rating]
 
 
 class RatingCreate(BaseModel):
@@ -33,7 +33,7 @@ class ReviewResponse(BaseModel):
 
 
 class ReviewListResponse(BaseModel):
-    reviews: list[Review]
+    reviews: List[Review]
 
 
 class ReviewCreate(BaseModel):
@@ -58,7 +58,7 @@ class BookmarkResponse(BaseModel):
 
 
 class BookmarkListResponse(BaseModel):
-    bookmarks: list[Bookmark]
+    bookmarks: List[Bookmark]
 
 
 class BookmarkCreate(BaseModel):

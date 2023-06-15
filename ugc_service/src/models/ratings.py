@@ -1,9 +1,8 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import Field
-
 from models.base import BaseModel
+from pydantic import Field
 
 
 class Rating(BaseModel):

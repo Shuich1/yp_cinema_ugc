@@ -2,7 +2,6 @@ from async_fastapi_jwt_auth import AuthJWT
 from fastapi import Depends
 from fastapi.requests import Request
 from fastapi.security import HTTPBearer
-
 from models import User
 
 
