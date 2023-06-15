@@ -1,5 +1,16 @@
 # flake8: noqa
+from logging import Filter
+from core.middleware import get_request_id
+
+
+class RequestIdFilter(Filter):
+    def filter(self, record):
+        record.request_id = get_request_id()
+        return True
+
+
 LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+REQUEST_ID_LOG_FORMAT = '%(request_id)s - %(asctime)s - %(name)s - %(levelname)s - %(message)s'
 LOG_DEFAULT_HANDLERS = ['console', ]
 
 
@@ -8,7 +19,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': LOG_FORMAT
+            'format': REQUEST_ID_LOG_FORMAT
         },
         'default': {
             '()': 'uvicorn.logging.DefaultFormatter',
@@ -17,14 +28,20 @@ LOGGING = {
         },
         'access': {
             '()': 'uvicorn.logging.AccessFormatter',
-            'fmt': "%(levelprefix)s %(client_addr)s - '%(request_line)s' %(status_code)s",
+            'fmt': "%(request_id)s - %(asctime)s - uvicorn - %(levelname)s - %(client_addr)s - '%(request_line)s' %(status_code)s",
         },
+    },
+    'filters': {
+        'requestid': {
+            '()': RequestIdFilter,
+        }
     },
     'handlers': {
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
+            'filters': ['requestid'],
         },
         'default': {
             'formatter': 'default',
@@ -35,6 +52,7 @@ LOGGING = {
             'formatter': 'access',
             'class': 'logging.StreamHandler',
             'stream': 'ext://sys.stdout',
+            'filters': ['requestid'],
         },
     },
     'loggers': {

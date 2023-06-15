@@ -9,8 +9,11 @@ from api.schemas import (APIException, ReviewCreate, ReviewListResponse,
 from api.utils import get_page_params, get_sorting_params
 from fastapi import APIRouter, Depends, HTTPException, Query
 from models import User
-from services.exceptions import ResourceAlreadyExists, ResourceDoesNotExist
-from services.reviews import ReviewsService, get_reviews_service
+from services.exceptions import ResourceDoesNotExist, ResourceAlreadyExists
+from services.reviews import get_reviews_service, ReviewsService
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 router = APIRouter()
 
@@ -64,6 +67,7 @@ async def get_review(
     try:
         review = await service.get_review(review_id=review_id)
     except ResourceDoesNotExist:
+        logger.error('Review not found review_id=%s', review_id)
         raise HTTPException(HTTPStatus.NOT_FOUND, 'Review not found')
 
     return ReviewResponse(review=review)
@@ -86,9 +90,11 @@ async def delete_review(
     try:
         review = await service.get_review(review_id=review_id)
     except ResourceDoesNotExist:
+        logger.error('Review not found review_id=%s', review_id)
         raise HTTPException(HTTPStatus.NOT_FOUND, 'Review not found')
 
     if review.user_id != user.id:
+        logger.error('Only owners can delete their reviews: review.user_id=%s, user.id=%s', review.user_id, user.id)
         raise HTTPException(
             HTTPStatus.FORBIDDEN,
             'Only owners can delete their reviews',
@@ -117,6 +123,7 @@ async def create_review_vote(
             **schema.dict(),
         )
     except ResourceAlreadyExists:
+        logger.error('Vote already exists. review_id=%s, user_id=%s', review_id, user.id)
         raise HTTPException(HTTPStatus.CONFLICT, 'Vote already exists')
 
     return ReviewVoteResponse(review_vote=vote)
@@ -150,6 +157,7 @@ async def update_review_vote(
             **schema.dict(),
         )
     except ResourceDoesNotExist:
+        logger.error('Vote does not exist. review_id=%s, user_id=%s', review_id, user.id)
         raise HTTPException(HTTPStatus.NOT_FOUND, 'Vote does not exist')
 
     return ReviewVoteResponse(review_vote=vote)
@@ -171,6 +179,7 @@ async def get_review_vote(
             user_id=user_id,
         )
     except ResourceDoesNotExist:
+        logger.error('Vote not found. review_id=%s, user_id=%s', review_id, user_id)
         raise HTTPException(HTTPStatus.NOT_FOUND, 'Vote not found')
 
     return ReviewVoteResponse(review_vote=vote)
@@ -200,4 +209,5 @@ async def delete_review_vote(
     try:
         await service.delete_review_vote(review_id=review_id, user_id=user_id)
     except ResourceDoesNotExist:
+        logger.error('Vote not found. review_id=%s, user_id=%s', review_id, user_id)
         raise HTTPException(HTTPStatus.NOT_FOUND, 'Vote not found')

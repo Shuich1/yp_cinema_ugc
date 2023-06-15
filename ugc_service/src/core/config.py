@@ -1,5 +1,6 @@
 import os
 from logging import config as logging_config
+from contextvars import ContextVar
 
 from core.logger import LOGGING
 from pydantic import BaseSettings
@@ -33,6 +34,9 @@ class Settings(BaseSettings):
 
     # MongoDB settings
     mongodb_uri: str
+
+    # Sentry
+    sentry_dsn: str
 
     class Config:
         env_file = ENV_FILE_PATH

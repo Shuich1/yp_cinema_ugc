@@ -7,6 +7,8 @@ services:
       dockerfile: Dockerfile
     env_file:
       - environments/ugc_service
+    volumes:
+      - ./ugc_service:/ugc_service
     environment:
       - AUTHJWT_SECRET_KEY=${JWT_SECRET_KEY}
     depends_on:
@@ -21,6 +23,51 @@ services:
     env_file:
       - environments/ugc_etl_kafka_click
 
+  log_logstash:
+    image: logstash:7.10.1
+    environment:
+      XPACK_MONITORING_ENABLED: "false"
+      ES_HOST: "log-elasticsearch:9200"
+    ports:
+      - "5044:5044/udp"
+    volumes:
+      - ./logstash/logstash.conf:/config/logstash.conf:ro
+    command: logstash -f /config/logstash.conf
+
+  log-elasticsearch:
+    image: elasticsearch:7.17.8
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: "-Xms2048m -Xmx2048m"
+    ports:
+      - 9200:9200
+    volumes:
+      - log_esdata:/tmp/elasticsearch/data  
+
+  log_kibana:
+    image: kibana:7.17.10
+    environment: 
+      ELASTICSEARCH_HOSTS: '["http://log-elasticsearch:9200"]'
+    ports:
+      - 5601:5601
+    depends_on:
+      - log-elasticsearch
+
+  jaeger:
+    container_name: jaeger
+    image: jaegertracing/all-in-one:1.42
+    environment:
+      - QUERY_BASE_PATH=/jaeger
+      - SPAN_STORAGE_TYPE=badger
+      - BADGER_EPHEMERAL=false
+      - BADGER_DIRECTORY_VALUE=/badger/data
+      - BADGER_DIRECTORY_KEY=/badger/key
+    volumes:
+      - jaeger_data:/badger
+    expose:
+      - "16686"
+      - "6831/udp"
+  
   ugc-kafka-zookeeper:
     image: confluentinc/cp-zookeeper:7.3.3
     hostname: ugc-kafka-zookeeper
@@ -112,3 +159,4 @@ services:
 
 volumes:
   ch_config:
+  log_esdata:
