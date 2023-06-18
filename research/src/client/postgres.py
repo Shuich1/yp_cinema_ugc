@@ -1,6 +1,6 @@
 import psycopg2
 from contextlib import contextmanager
-from typing import ContextManager, Iterable
+from typing import Generator, Iterable, Optional, Any
 
 from utils import split_into_chunks
 from .base import DBClient
@@ -9,11 +9,11 @@ from .base import DBClient
 class PostgresClient(DBClient):
     dbms_name = "PostgreSQL"
 
-    def __init__(self, **connection_info):
+    def __init__(self, **connection_info) -> None:
         self.connection_info = connection_info
 
     @contextmanager
-    def connect(self) -> ContextManager:
+    def connect(self) -> Generator[psycopg2.extensions.connection, None, None]:
         connection = self._acquire_connection()
         try:
             yield connection
@@ -53,7 +53,9 @@ class PostgresClient(DBClient):
                     cursor.executemany(query, chunk)
                 connection.commit()
 
-    def retrieve_last_timecode(self, film_id: str, user_id: str):
+    def retrieve_last_timecode(
+        self, film_id: str, user_id: str
+    ) -> Optional[Any]:
         query = """
             SELECT event_time
             FROM likes
@@ -71,7 +73,7 @@ class PostgresClient(DBClient):
     def retrieve_most_viewed(self, films_count: int = 10) -> None:
         pass
 
-    def retrieve_numbers_of_likes(self, film_id: str):
+    def retrieve_numbers_of_likes(self, film_id: str) -> Optional[Any]:
         query = """
                 SELECT film_id, COUNT(*) as number_of_likes
                 FROM likes
@@ -84,12 +86,13 @@ class PostgresClient(DBClient):
                 result = cursor.fetchone()
                 return result[0] if result else None
 
-    def retrieve_average_score_for_movie(self, film_id: str):
+    def retrieve_average_score_for_movie(
+        self, film_id: str
+    ) -> Optional[float]:
         query = """
-                SELECT film_id, AVG(score) as average_score
+                SELECT AVG(score) as average_score
                 FROM likes
-                WHERE film_id = %s
-                GROUP BY film_id;
+                WHERE film_id = %s;
         """
         with self.connect() as connection:
             with connection.cursor() as cursor:

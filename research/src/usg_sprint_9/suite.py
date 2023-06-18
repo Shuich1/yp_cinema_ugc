@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import partial
 from queue import Queue
-from typing import Iterable, Iterator, Callable, Any
+from typing import Iterable, Iterator, Callable, Any, List, Dict
 
 
 from data import test_data
@@ -61,8 +61,8 @@ class TestResult:
 
 class TestSuite:
     def __init__(self, rows_count: int, wps: int, readers_count: int):
-        self.clients = []
-        self.queue = Queue()
+        self.clients: List[DBClient] = []
+        self.queue: Queue = Queue()
         self.rows_count = rows_count
         self.wps = wps
         self.readers_count = readers_count
@@ -119,7 +119,7 @@ class TestSuite:
         client: DBClient,
         film_id: str,
         user_id: str,
-    ) -> dict[str, float]:
+    ) -> Dict[str, float]:
         with client.connect():
             data = list(test_data(100_000))
             t1 = measure_time(client.insert_data, data)
@@ -130,7 +130,9 @@ class TestSuite:
                 film_id,
                 repeats=100,
             )
-            t3 = measure_time(client.retrieve_average_score_for_movie, film_id, repeats=100)
+            t3 = measure_time(
+                client.retrieve_average_score_for_movie, film_id, repeats=100
+            )
 
         return {
             "insert_100k_rows": t1,
@@ -143,7 +145,7 @@ class TestSuite:
         client: DBClient,
         film_id: str,
         user_id: str,
-    ) -> dict[str, float]:
+    ) -> Dict[str, float]:
         max_producing_time = 10
         data = test_data(max_producing_time * self.wps)
 
@@ -151,7 +153,9 @@ class TestSuite:
             target=self.produce,
             args=(data, 1 / self.wps),
         )
-        consumer_thread = threading.Thread(target=self.consume, args=(client.copy(),))
+        consumer_thread = threading.Thread(
+            target=self.consume, args=(client.copy(),)
+        )
 
         self.stress_tests_finished = False
         producer_thread.start()
@@ -164,7 +168,9 @@ class TestSuite:
                 film_id,
                 repeats=100,
             )
-            t2 = measure_time(client.retrieve_average_score_for_movie, film_id, repeats=100)
+            t2 = measure_time(
+                client.retrieve_average_score_for_movie, film_id, repeats=100
+            )
 
         self.stress_tests_finished = True
 
@@ -178,7 +184,7 @@ class TestSuite:
         client: DBClient,
         film_id: str,
         user_id: str,
-    ) -> dict[str, float]:
+    ) -> Dict[str, float]:
         r1 = self.run_in_parallel(
             client,
             partial(self.measure_retrieve_numbers_of_likes, film_id=film_id),
@@ -188,7 +194,9 @@ class TestSuite:
 
         r2 = self.run_in_parallel(
             client,
-            partial(self.measure_retrieve_average_score_for_movie, film_id=film_id),
+            partial(
+                self.measure_retrieve_average_score_for_movie, film_id=film_id
+            ),
             self.readers_count,
         )
         t2 = sum(r2) / self.readers_count
@@ -226,9 +234,13 @@ class TestSuite:
             )
 
     @staticmethod
-    def measure_retrieve_average_score_for_movie(client: DBClient, film_id) -> float:
+    def measure_retrieve_average_score_for_movie(
+        client: DBClient, film_id
+    ) -> float:
         with client.connect():
-            return measure_time(client.retrieve_average_score_for_movie, film_id, repeats=100)
+            return measure_time(
+                client.retrieve_average_score_for_movie, film_id, repeats=100
+            )
 
     def produce(self, data: Iterable[tuple], period: float) -> None:
         next_produce = time.time()
