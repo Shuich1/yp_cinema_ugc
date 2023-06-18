@@ -21,8 +21,8 @@ def test_data(rows_count: int) -> Iterator[tuple]:
     user_ids = [str(uuid.uuid4()) for _ in range(users_count)]
 
     event_time_range = (
-        datetime(2020, 1, 1).timestamp(),
-        datetime(2023, 1, 1).timestamp(),
+        int(datetime(2020, 1, 1).timestamp()),
+        int(datetime(2023, 1, 1).timestamp()),
     )
 
     for _ in range(rows_count):
