@@ -4,7 +4,7 @@ from uuid import uuid4
 from testdata import Bookmark
 from utils import write_to_db, extract_from_db
 
-endpoint_url = '/bookmarks/{film_id}/{user_id}/'
+endpoint_url = '/bookmarks/{film_id}/{user_id}'
 endpoint_method = 'delete'
 
 
@@ -82,7 +82,7 @@ def test_request_for_a_nonexistent_bookmark_results_in_error_404(api_request):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-def test_request_for_invalid_film_id_results_in_error_422(api_request):
+def test_request_for_invalid_bookmark_id_results_in_error_422(api_request):
     film_id = 'invalid'
     user_id = uuid4()
 

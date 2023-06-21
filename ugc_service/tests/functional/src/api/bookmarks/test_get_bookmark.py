@@ -6,7 +6,7 @@ import pytest
 from testdata import Bookmark
 from utils import write_to_db
 
-endpoint_url = '/bookmarks/{film_id}/{user_id}/'
+endpoint_url = '/bookmarks/{film_id}/{user_id}'
 endpoint_method = 'get'
 
 

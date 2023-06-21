@@ -1,6 +1,8 @@
 from http import HTTPStatus
 from uuid import uuid4
 
+import pytest
+
 from testdata import Bookmark
 from utils import write_to_db
 
@@ -35,6 +37,10 @@ def test_correct_request_returns_a_list_of_bookmarks_with_code_200(
     response_bookmark_ids = {bookmark.id for bookmark in response_bookmarks}
 
     assert response_bookmark_ids == bookmark_ids
+
+
+def test_request_with_pagination_params_returns_correct_page_with_code_200():
+    pytest.fail()
 
 
 def test_request_for_nonexistent_user_id_returns_an_empty_list_with_code_200(
