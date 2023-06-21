@@ -1,0 +1,153 @@
+version: "3.9"
+
+services:
+
+  ugc-tests:
+    container_name: ugc-tests
+    build: .
+    environment:
+      - API_HOST=ugc-fastapi
+      - API_PORT=8000
+      - API_PATH=/ugc/api/v1
+      - MONGODB_HOST=ugc-mongo
+      - MONGODB_PORT=27017
+      - AUTHJWT_SECRET_KEY=test
+    depends_on:
+      - ugc-fastapi
+      - ugc-etl
+
+  ugc-fastapi:
+    container_name: ugc-fastapi
+    build: ../../../ugc_service
+    environment:
+      - USE_GUNICORN=true
+      - UVICORN_WORKERS=2
+      - PROJECT_NAME=UGC_PROJECT
+      - PROJECT_DESCRIPTION=UGC_PROJECT
+      - UVICORN_APP_NAME=main:app
+      - UVICORN_HOST=0.0.0.0
+      - UVICORN_PORT=8000
+      - KAFKA_HOST=ugc-kafka
+      - KAFKA_PORT=9092
+      - KAFKA_VIEW_TOPIC=views
+      - CLICKHOUSE_HOST=ugc-clickhouse-node1
+      - CLICKHOUSE_PORT=9000
+      - BACKOFF_MAX_TIME=300
+      - MONGODB_URI=mongodb://ugc-mongo:27017
+      - AUTHJWT_SECRET_KEY=test
+      - SENTRY_ENABLED=false
+    depends_on:
+      ugc-kafka:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  ugc-etl:
+    container_name: ugc-etl
+    build: ../../../ugc_etl_kafka_click
+    environment:
+      - KAFKA_TOPIC=views
+      - KAFKA_SERVER=ugc-kafka:29092
+      - KAFKA_GROUPID=ugc_etl
+      - CLICKHOUSE_HOST=ugc-clickhouse-node1
+      - CLICKHOUSE_TABLENAME=default.view
+      - BACKOFF_MAX_TIME=300
+      - SLEEP_INTERVAL=10
+
+  ugc-kafka-zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.3
+    hostname: ugc-kafka-zookeeper
+    container_name: ugc-kafka-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    restart: always
+
+  ugc-kafka:
+    image: confluentinc/cp-kafka:7.3.3
+    container_name: ugc-kafka
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server ugc-kafka:9092 --list"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      - ugc-kafka-zookeeper
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "ugc-kafka-zookeeper:2181"
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://ugc-kafka:9092,PLAINTEXT_INTERNAL://ugc-kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    restart: always
+
+  ugc-clickhouse-zookeeper:
+    image: zookeeper:3.5
+    container_name: ugc-clickhouse-zookeeper
+    hostname: ugc-clickhouse-zookeeper
+    healthcheck:
+      test: nc -z localhost 2181 || exit -1
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  ugc-clickhouse-node1:
+    image: yandex/clickhouse-server:20.4
+    container_name: ugc-clickhouse-node1
+    hostname: ugc-clickhouse-node1
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - ../../../ch_config/node1:/etc/clickhouse-server
+      - ../../../ch_config/sql/node1.sql:/docker-entrypoint-initdb.d/init.sql
+    depends_on:
+      ugc-clickhouse-zookeeper:
+        condition: service_healthy
+
+  ugc-clickhouse-node2:
+    image: yandex/clickhouse-server:20.4
+    container_name: ugc-clickhouse-node2
+    hostname: ugc-clickhouse-node2
+    volumes:
+      - ../../../ch_config/node2:/etc/clickhouse-server
+    depends_on:
+      ugc-clickhouse-zookeeper:
+        condition: service_healthy
+
+  ugc-clickhouse-node3:
+    image: yandex/clickhouse-server:20.4
+    container_name: ugc-clickhouse-node3
+    hostname: ugc-clickhouse-node3
+    volumes:
+      - ../../../ch_config/node3:/etc/clickhouse-server
+      - ../../../ch_config/sql/node3.sql:/docker-entrypoint-initdb.d/init.sql
+    depends_on:
+      ugc-clickhouse-zookeeper:
+        condition: service_healthy
+
+  ugc-clickhouse-node4:
+    image: yandex/clickhouse-server:20.4
+    container_name: ugc-clickhouse-node4
+    hostname: ugc-clickhouse-node4
+    volumes:
+      - ../../../ch_config/node4:/etc/clickhouse-server
+    depends_on:
+      ugc-clickhouse-zookeeper:
+        condition: service_healthy
+
+  ugc-mongo:
+    container_name: ugc-mongo
+    image: mongo:6.0.6-jammy
+    ports:
+      - "27017:27017"
+
+volumes:
+  ch_config:
