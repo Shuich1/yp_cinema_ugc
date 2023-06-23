@@ -3,6 +3,15 @@ from fastapi import Depends
 from fastapi.requests import Request
 from fastapi.security import HTTPBearer
 from models import User
+from pydantic import ValidationError
+from async_fastapi_jwt_auth.exceptions import AuthJWTException
+from http import HTTPStatus
+
+
+class JWTSchemaException(AuthJWTException):
+    def __init__(self, status_code: int, message: str):
+        self.status_code = status_code
+        self.message = message
 
 
 class JWTBearer(HTTPBearer):
@@ -19,4 +28,10 @@ class JWTBearer(HTTPBearer):
 
     @staticmethod
     def _retrieve_user(jwt_payload: dict) -> User:
-        return User(id=jwt_payload.get('sub'))
+        try:
+            return User(id=jwt_payload.get('sub'))
+        except ValidationError:
+            raise JWTSchemaException(
+                status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+                message='Invalid JWT schema',
+            )

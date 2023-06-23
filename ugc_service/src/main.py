@@ -20,10 +20,11 @@ from db import olap, oltp, mongo
 
 logger = getLogger(__name__)
 
-sentry_sdk.init(
-    dsn=settings.sentry_dsn,
-    traces_sample_rate=1.0,
-)
+if settings.sentry_enabled:
+    sentry_sdk.init(
+        dsn=settings.sentry_dsn,
+        traces_sample_rate=1.0,
+    )
 
 
 @asynccontextmanager
@@ -69,7 +70,8 @@ def authjwt_exception_handler(request: Request, exc: AuthJWTException):
     )
 
 
-app.add_middleware(RequestContextMiddleware)
+if settings.sentry_enabled:
+    app.add_middleware(RequestContextMiddleware)
 
 app.include_router(
     users_films.router,

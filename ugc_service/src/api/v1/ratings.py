@@ -35,6 +35,7 @@ async def get_rating_list(
 
 @router.post(
     '/',
+    status_code=HTTPStatus.CREATED,
     responses={
         401: {'description': 'Unauthorized', 'model': APIException},
         409: {'description': 'Conflict', 'model': APIException},

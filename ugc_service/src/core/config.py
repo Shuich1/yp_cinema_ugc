@@ -36,7 +36,8 @@ class Settings(BaseSettings):
     mongodb_uri: str
 
     # Sentry
-    sentry_dsn: str
+    sentry_enabled: bool = True
+    sentry_dsn: str | None = None
 
     class Config:
         env_file = ENV_FILE_PATH
