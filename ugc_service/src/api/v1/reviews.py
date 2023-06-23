@@ -105,7 +105,7 @@ async def delete_review(
 
 
 @router.post(
-    '/{review_id}/votes',
+    '/{review_id}/votes/',
     status_code=HTTPStatus.CREATED,
     responses={
         401: {'description': 'Unauthorized', 'model': APIException},
