@@ -160,3 +160,4 @@ services:
 volumes:
   ch_config:
   log_esdata:
+  jaeger_data:
