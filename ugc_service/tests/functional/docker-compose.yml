@@ -73,7 +73,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
-      start_period: 10s
+      start_period: 30s
     depends_on:
       - ugc-kafka-zookeeper
     ports:
@@ -148,6 +148,3 @@ services:
     image: mongo:6.0.6-jammy
     ports:
       - "27017:27017"
-
-volumes:
-  ch_config:
