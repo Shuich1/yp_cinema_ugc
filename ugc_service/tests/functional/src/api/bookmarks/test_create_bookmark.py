@@ -8,7 +8,7 @@ endpoint_url = '/bookmarks/'
 endpoint_method = 'post'
 
 
-def test_correct_authenticated_request_creates_and_returns_a_bookmark_with_code_200(
+def test_correct_authenticated_request_creates_and_returns_a_bookmark_with_code_201(
         db,
         api_request,
 ):
@@ -23,10 +23,10 @@ def test_correct_authenticated_request_creates_and_returns_a_bookmark_with_code_
         json=payload,
     )
 
-    assert response.status_code == HTTPStatus.OK
+    assert response.status_code == HTTPStatus.CREATED
 
-    payload = response.json()
-    response_bookmark = Bookmark.parse_obj(payload['bookmark'])
+    response_body = response.json()
+    response_bookmark = Bookmark.parse_obj(response_body['bookmark'])
 
     search_params = bookmark.dict(exclude={'created'})
     db_bookmark = extract_from_db(Bookmark, db.bookmarks, search_params)
@@ -35,8 +35,7 @@ def test_correct_authenticated_request_creates_and_returns_a_bookmark_with_code_
 
 
 def test_unauthenticated_request_results_in_error_401(api_request):
-    user_id = uuid4()
-    bookmark = Bookmark(user_id=user_id)
+    bookmark = Bookmark()
 
     payload = {'film_id': str(bookmark.film_id)}
     response = api_request(endpoint_method, endpoint_url, json=payload)
@@ -48,9 +47,8 @@ def test_attempt_to_create_already_existing_bookmark_results_in_error_409(
         db,
         api_request,
 ):
-    film_id = uuid4()
     user_id = uuid4()
-    bookmark = Bookmark(film_id=film_id, user_id=user_id)
+    bookmark = Bookmark(user_id=user_id)
 
     write_to_db(db.bookmarks, bookmark)
 
@@ -58,7 +56,7 @@ def test_attempt_to_create_already_existing_bookmark_results_in_error_409(
     response = api_request(
         endpoint_method,
         endpoint_url,
-        user_id=bookmark.user_id,
+        user_id=user_id,
         json=payload,
     )
 

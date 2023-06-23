@@ -25,8 +25,8 @@ def test_correct_request_returns_a_bookmarks_with_code_200(db, api_request):
 
     assert response.status_code == HTTPStatus.OK
 
-    payload = response.json()
-    response_bookmark = Bookmark.parse_obj(payload['bookmark'])
+    response_body = response.json()
+    response_bookmark = Bookmark.parse_obj(response_body['bookmark'])
 
     assert response_bookmark.id == bookmark.id
 
